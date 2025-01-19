@@ -9,9 +9,11 @@ export const RecentScans = () => {
         Recent Scans
       </h2>
       <div className="space-y-3">
-        <Card className="p-4">
+        <Card className="p-6 bg-accent/20">
           <p className="text-sm font-medium">No recent scans</p>
-          <p className="text-xs text-muted-foreground">Your scanned ingredients will appear here</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Your scanned ingredients will appear here
+          </p>
         </Card>
       </div>
     </div>
