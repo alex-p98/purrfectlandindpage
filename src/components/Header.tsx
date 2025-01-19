@@ -8,7 +8,7 @@ export const Header = () => {
         <Button variant="ghost" size="icon" className="scale-animation">
           <Menu className="h-5 w-5" />
         </Button>
-        <h1 className="text-xl font-semibold gradient-score">
+        <h1 className="text-xl font-semibold text-primary">
           PurrfectDiet
         </h1>
       </div>

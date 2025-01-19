@@ -11,7 +11,7 @@ const Index = () => {
         <div className="text-center space-y-3">
           <h1 className="text-3xl font-bold">
             The best place to check your
-            <span className="gradient-score"> cat's diet</span>
+            <span className="text-primary"> cat's diet</span>
           </h1>
           <p className="text-muted-foreground">
             Discover what's in your cat's food and ensure they get the best nutrition
