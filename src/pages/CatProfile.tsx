@@ -17,7 +17,7 @@ const CatProfile = () => {
     allergies: "Fish, Dairy",
     healthCondition: "Generally healthy, regular checkups required",
     notes: "Loves to sleep and play with yarn",
-    image: "/lovable-uploads/3e2aeb64-eed1-4c81-b3e3-6c83f5239b9f.png"
+    image: "/lovable-uploads/ae15ab81-e4b2-4296-8454-d8ee35d09389.png"
   };
 
   return (
