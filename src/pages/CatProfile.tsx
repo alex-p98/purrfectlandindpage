@@ -11,7 +11,7 @@ const CatProfile = () => {
   // TODO: Fetch cat data from database
   const catData = {
     name: name,
-    breed: "Persian",
+    breed: "Tuxedo",
     age: "2 years",
     weight: "4.5 kg",
     allergies: "Fish, Dairy",
