@@ -5,7 +5,7 @@ import { RecentScans } from "@/components/RecentScans";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-8">
       <Header />
       <main className="container max-w-md mx-auto pt-16 sm:pt-8 p-4 space-y-8">
         <Scanner />
