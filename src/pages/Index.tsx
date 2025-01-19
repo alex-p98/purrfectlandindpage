@@ -7,7 +7,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="container max-w-md mx-auto pt-20 p-4 space-y-8">
+      <main className="container max-w-md mx-auto pt-32 p-4 space-y-8">
         <div className="text-center space-y-3">
           <h1 className="text-3xl font-bold">
             The best place to check your
