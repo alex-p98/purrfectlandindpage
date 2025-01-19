@@ -12,6 +12,9 @@ const CatProfile = () => {
     name: name,
     breed: "Persian",
     age: "2 years",
+    weight: "4.5 kg",
+    allergies: "Fish, Dairy",
+    healthCondition: "Generally healthy, regular checkups required",
     notes: "Loves to sleep and play with yarn",
   };
 
@@ -48,6 +51,18 @@ const CatProfile = () => {
             <div>
               <h3 className="text-sm font-medium text-muted-foreground">Age</h3>
               <p>{catData.age}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">Weight</h3>
+              <p>{catData.weight}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">Allergies</h3>
+              <p>{catData.allergies}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">Health Condition</h3>
+              <p>{catData.healthCondition}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-muted-foreground">Notes</h3>

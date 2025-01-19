@@ -23,8 +23,8 @@ const Index = () => {
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Your Cats</h2>
           <div className="grid grid-cols-2 gap-4">
-            <CatProfile name="Whiskers" onClick={() => {}} />
-            <CatProfile onClick={() => {}} />
+            <CatProfile name="Whiskers" />
+            <CatProfile />
           </div>
         </div>
 
