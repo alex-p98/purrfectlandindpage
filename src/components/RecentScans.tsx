@@ -13,14 +13,14 @@ interface ScanEntry {
 const mockScans: ScanEntry[] = [
   {
     id: 1,
-    image: "https://images.unsplash.com/photo-1606663889134-b1dedb5ed8b7",
+    image: "https://images.unsplash.com/photo-1589136777351-fdc9c9cab193",
     timestamp: new Date(2024, 2, 15, 14, 30),
     brand: "Whiskas",
     ingredients: ["Chicken", "Fish", "Rice"]
   },
   {
     id: 2,
-    image: "https://images.unsplash.com/photo-1583900985737-6d0495555783",
+    image: "https://images.unsplash.com/photo-1571945227444-5856cd40e6b7",
     timestamp: new Date(2024, 2, 14, 9, 15),
     brand: "Royal Canin",
     ingredients: ["Salmon", "Sweet Potato", "Vitamins"]
