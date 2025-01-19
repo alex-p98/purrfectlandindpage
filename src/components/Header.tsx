@@ -8,11 +8,11 @@ export const Header = () => {
         <Button variant="ghost" size="icon" className="scale-animation">
           <Menu className="h-5 w-5" />
         </Button>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center justify-center">
           <img 
             src="/lovable-uploads/3d045043-e078-46c6-9577-58cb24afec2a.png" 
             alt="PurrfectDiet Logo" 
-            className="h-12 w-auto" 
+            className="h-24 w-auto" 
           />
         </div>
       </div>
