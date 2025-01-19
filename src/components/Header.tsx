@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 
 export const Header = () => {
   return (
-    <header className="w-full px-4 py-2 pt-6 flex items-center justify-between bg-background/80 backdrop-blur-sm z-50 border-b border-border/40">
+    <header className="w-full px-4 py-2 pt-2 flex items-center justify-between bg-background/80 backdrop-blur-sm z-50 border-b border-border/40">
       <Button variant="ghost" size="icon" className="scale-animation">
         <Menu className="h-5 w-5" />
       </Button>
