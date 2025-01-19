@@ -39,11 +39,11 @@ export const Scanner = () => {
       </Card>
 
       <Dialog open={showCamera} onOpenChange={setShowCamera}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md rounded-3xl">
           <DialogHeader>
             <DialogTitle>Take a Photo</DialogTitle>
           </DialogHeader>
-          <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
+          <div className="aspect-video bg-muted rounded-2xl flex items-center justify-center">
             <Camera className="h-10 w-10 text-muted-foreground" />
           </div>
           <div className="flex justify-center">
