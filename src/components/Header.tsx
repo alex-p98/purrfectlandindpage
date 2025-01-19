@@ -8,9 +8,13 @@ export const Header = () => {
         <Button variant="ghost" size="icon" className="scale-animation">
           <Menu className="h-5 w-5" />
         </Button>
-        <h1 className="text-xl font-semibold text-primary">
-          PurrfectDiet
-        </h1>
+        <div className="flex items-center gap-1">
+          <img 
+            src="/lovable-uploads/3d045043-e078-46c6-9577-58cb24afec2a.png" 
+            alt="PurrfectDiet Logo" 
+            className="h-8"
+          />
+        </div>
       </div>
     </header>
   );
