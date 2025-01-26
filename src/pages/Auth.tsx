@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeft } from "lucide-react";
 
 const Auth = () => {
   const { signIn, signUp, session } = useAuth();
@@ -48,12 +49,22 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center pt-16 px-4">
       <div className="w-full max-w-sm space-y-8">
-        <div className="flex justify-center">
-          <img
-            src="/lovable-uploads/3d045043-e078-46c6-9577-58cb24afec2a.png"
-            alt="PurrfectDiet Logo"
-            className="h-24"
-          />
+        <div className="relative w-full">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute left-0 top-0"
+            onClick={() => navigate("/")}
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </Button>
+          <div className="flex justify-center">
+            <img
+              src="/lovable-uploads/3d045043-e078-46c6-9577-58cb24afec2a.png"
+              alt="PurrfectDiet Logo"
+              className="h-24"
+            />
+          </div>
         </div>
 
         <Tabs defaultValue="signin" className="w-full">
