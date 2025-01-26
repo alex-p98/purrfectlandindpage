@@ -50,7 +50,22 @@ const CustomDiet = () => {
         throw new Error('Failed to generate diet');
       }
 
-      const data = await response.json();
+      const responseText = await response.text();
+      console.log('Raw response:', responseText); // Debug log
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Error parsing response:', parseError);
+        throw new Error('Invalid response format from server');
+      }
+
+      // Validate the response structure
+      if (!data.meals || !Array.isArray(data.meals) || !data.recommendations) {
+        throw new Error('Invalid diet plan format');
+      }
+
       setDietPlan(data);
       toast.success("Custom diet plan generated successfully!");
     } catch (error) {
