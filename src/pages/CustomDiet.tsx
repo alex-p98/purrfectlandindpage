@@ -14,19 +14,45 @@ interface CatInfo {
   image: string;
 }
 
-interface DietPlan {
-  meals: {
-    name: string;
-    ingredients: string[];
-    instructions: string;
-  }[];
-  recommendations: string[];
+interface DietSection {
+  title: string;
+  content: string[];
 }
 
 const CustomDiet = () => {
   const [selectedCat, setSelectedCat] = useState<CatInfo | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [dietPlan, setDietPlan] = useState<DietPlan | null>(null);
+  const [dietSections, setDietSections] = useState<DietSection[]>([]);
+
+  const parseMarkdownResponse = (markdown: string) => {
+    const sections: DietSection[] = [];
+    const lines = markdown.split('\n');
+    let currentSection: DietSection | null = null;
+
+    lines.forEach(line => {
+      // New section starts with ###
+      if (line.startsWith('### ')) {
+        if (currentSection) {
+          sections.push(currentSection);
+        }
+        currentSection = {
+          title: line.replace('### ', '').trim(),
+          content: []
+        };
+      } 
+      // Add content lines (starting with -) to current section
+      else if (line.startsWith('- ') && currentSection) {
+        currentSection.content.push(line.replace('- ', '').trim());
+      }
+    });
+
+    // Add the last section
+    if (currentSection) {
+      sections.push(currentSection);
+    }
+
+    return sections;
+  };
 
   const handleGenerateDiet = async () => {
     if (!selectedCat) {
@@ -35,7 +61,7 @@ const CustomDiet = () => {
     }
 
     setIsGenerating(true);
-    setDietPlan(null);
+    setDietSections([]);
     
     try {
       const response = await fetch('https://hook.us2.make.com/om2urxc9mn2w7e6q4x6v8sttde8tqai2', {
@@ -51,22 +77,8 @@ const CustomDiet = () => {
       }
 
       const responseText = await response.text();
-      console.log('Raw response:', responseText); // Debug log
-
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('Error parsing response:', parseError);
-        throw new Error('Invalid response format from server');
-      }
-
-      // Validate the response structure
-      if (!data.meals || !Array.isArray(data.meals) || !data.recommendations) {
-        throw new Error('Invalid diet plan format');
-      }
-
-      setDietPlan(data);
+      const parsedSections = parseMarkdownResponse(responseText);
+      setDietSections(parsedSections);
       toast.success("Custom diet plan generated successfully!");
     } catch (error) {
       console.error('Error generating diet:', error);
@@ -150,38 +162,20 @@ const CustomDiet = () => {
               </Card>
             )}
 
-            {dietPlan && (
+            {dietSections.length > 0 && (
               <div className="space-y-6">
                 <h3 className="text-2xl font-semibold">Custom Diet Plan</h3>
                 
-                {dietPlan.meals.map((meal, index) => (
-                  <Card key={index} className="p-6 space-y-4">
-                    <h4 className="text-xl font-semibold text-primary">{meal.name}</h4>
-                    
-                    <div>
-                      <h5 className="text-lg font-medium mb-2">Ingredients:</h5>
-                      <ul className="list-disc pl-6 space-y-1">
-                        {meal.ingredients.map((ingredient, idx) => (
-                          <li key={idx} className="text-muted-foreground">{ingredient}</li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div>
-                      <h5 className="text-lg font-medium mb-2">Instructions:</h5>
-                      <p className="text-muted-foreground">{meal.instructions}</p>
-                    </div>
+                {dietSections.map((section, index) => (
+                  <Card key={index} className="p-6">
+                    <h4 className="text-xl font-semibold text-primary mb-4">{section.title}</h4>
+                    <ul className="list-disc pl-6 space-y-2">
+                      {section.content.map((item, idx) => (
+                        <li key={idx} className="text-muted-foreground">{item}</li>
+                      ))}
+                    </ul>
                   </Card>
                 ))}
-
-                <Card className="p-6">
-                  <h4 className="text-xl font-semibold text-primary mb-4">Recommendations</h4>
-                  <ul className="list-disc pl-6 space-y-2">
-                    {dietPlan.recommendations.map((rec, index) => (
-                      <li key={index} className="text-muted-foreground">{rec}</li>
-                    ))}
-                  </ul>
-                </Card>
               </div>
             )}
           </div>
