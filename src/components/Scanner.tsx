@@ -54,18 +54,62 @@ export const Scanner = () => {
     }
   };
 
+  const compressImage = async (base64String: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Failed to get canvas context'));
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = base64String;
+    });
+  };
+
   const handleScanIngredients = async () => {
     if (!capturedImage) return;
 
     setIsScanning(true);
     try {
+      // Compress the image before sending
+      const compressedImage = await compressImage(capturedImage);
+      
       const response = await fetch('https://hook.us2.make.com/8yfg9zxxf24ttnq2qmvlfcy3uzjbt4db', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          image: capturedImage,
+          image: compressedImage.split(',')[1], // Remove the data:image/jpeg;base64, prefix
+          format: 'base64',
+          mimeType: 'image/jpeg',
           timestamp: new Date().toISOString(),
         }),
       });
@@ -79,6 +123,7 @@ export const Scanner = () => {
         description: "Your ingredients have been successfully scanned",
       });
     } catch (error) {
+      console.error('Scanning error:', error);
       toast({
         title: "Scan failed",
         description: "Failed to scan ingredients. Please try again.",
