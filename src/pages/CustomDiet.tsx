@@ -1,5 +1,5 @@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
 import { useState } from "react";
@@ -14,9 +14,19 @@ interface CatInfo {
   image: string;
 }
 
+interface DietPlan {
+  meals: {
+    name: string;
+    ingredients: string[];
+    instructions: string;
+  }[];
+  recommendations: string[];
+}
+
 const CustomDiet = () => {
   const [selectedCat, setSelectedCat] = useState<CatInfo | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [dietPlan, setDietPlan] = useState<DietPlan | null>(null);
 
   const handleGenerateDiet = async () => {
     if (!selectedCat) {
@@ -25,6 +35,7 @@ const CustomDiet = () => {
     }
 
     setIsGenerating(true);
+    setDietPlan(null);
     
     try {
       const response = await fetch('https://hook.us2.make.com/om2urxc9mn2w7e6q4x6v8sttde8tqai2', {
@@ -39,7 +50,9 @@ const CustomDiet = () => {
         throw new Error('Failed to generate diet');
       }
 
-      toast.success("Custom diet plan is being generated! You'll receive it soon.");
+      const data = await response.json();
+      setDietPlan(data);
+      toast.success("Custom diet plan generated successfully!");
     } catch (error) {
       console.error('Error generating diet:', error);
       toast.error("Failed to generate diet. Please try again later.");
@@ -120,6 +133,41 @@ const CustomDiet = () => {
                   {isGenerating ? "Generating..." : "Generate Custom Diet"}
                 </Button>
               </Card>
+            )}
+
+            {dietPlan && (
+              <div className="space-y-6">
+                <h3 className="text-2xl font-semibold">Custom Diet Plan</h3>
+                
+                {dietPlan.meals.map((meal, index) => (
+                  <Card key={index} className="p-6 space-y-4">
+                    <h4 className="text-xl font-semibold text-primary">{meal.name}</h4>
+                    
+                    <div>
+                      <h5 className="text-lg font-medium mb-2">Ingredients:</h5>
+                      <ul className="list-disc pl-6 space-y-1">
+                        {meal.ingredients.map((ingredient, idx) => (
+                          <li key={idx} className="text-muted-foreground">{ingredient}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h5 className="text-lg font-medium mb-2">Instructions:</h5>
+                      <p className="text-muted-foreground">{meal.instructions}</p>
+                    </div>
+                  </Card>
+                ))}
+
+                <Card className="p-6">
+                  <h4 className="text-xl font-semibold text-primary mb-4">Recommendations</h4>
+                  <ul className="list-disc pl-6 space-y-2">
+                    {dietPlan.recommendations.map((rec, index) => (
+                      <li key={index} className="text-muted-foreground">{rec}</li>
+                    ))}
+                  </ul>
+                </Card>
+              </div>
             )}
           </div>
         </div>
