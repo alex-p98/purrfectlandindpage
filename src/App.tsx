@@ -25,15 +25,15 @@ function App() {
             <Route path="/" element={<Index />} />
             <Route 
               path="/add-cat" 
-              element={isAuthenticated ? <AddCat /> : <Navigate to="/auth" />} 
+              element={isAuthenticated ? <AddCat /> : <Navigate to="/auth" replace />} 
             />
             <Route 
               path="/cats/:name" 
-              element={isAuthenticated ? <CatProfile /> : <Navigate to="/auth" />} 
+              element={isAuthenticated ? <CatProfile /> : <Navigate to="/auth" replace />} 
             />
             <Route 
               path="/custom-diet" 
-              element={isAuthenticated ? <CustomDiet /> : <Navigate to="/auth" />} 
+              element={isAuthenticated ? <CustomDiet /> : <Navigate to="/auth" replace />} 
             />
             <Route path="/auth" element={<Auth />} />
           </Routes>
