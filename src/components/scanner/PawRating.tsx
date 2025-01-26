@@ -7,11 +7,11 @@ interface PawRatingProps {
 
 export const PawRating = ({ score, maxScore = 5 }: PawRatingProps) => {
   return (
-    <div className="flex gap-1">
+    <div className="flex gap-1 justify-center max-w-full overflow-hidden">
       {[...Array(maxScore)].map((_, index) => (
         <div 
           key={index} 
-          className={`w-20 h-20 transition-opacity duration-200 ${
+          className={`w-16 h-16 transition-opacity duration-200 ${
             index < score ? 'opacity-100' : 'opacity-30'
           }`}
         >
