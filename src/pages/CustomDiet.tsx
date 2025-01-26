@@ -30,8 +30,12 @@ const CustomDiet = () => {
     let currentSection: DietSection | null = null;
 
     lines.forEach(line => {
-      // Clean up the line by removing extra spaces and special characters
-      const cleanLine = line.trim().replace(/[""]/g, '"').replace(/['']/g, "'");
+      // Clean up the line by removing extra spaces, special characters, and asterisks
+      const cleanLine = line.trim()
+        .replace(/[""]/g, '"')
+        .replace(/['']/g, "'")
+        .replace(/\*\*/g, '') // Remove double asterisks
+        .replace(/\*/g, '');  // Remove single asterisks
       
       if (cleanLine.startsWith('### ')) {
         if (currentSection) {
