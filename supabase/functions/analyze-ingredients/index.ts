@@ -53,6 +53,7 @@ serve(async (req) => {
     })
 
     const data = await response.json()
+    console.log('OpenAI API Response:', data);
     
     if (!response.ok) {
       throw new Error(data.error?.message || 'Failed to analyze ingredients')
@@ -77,7 +78,7 @@ serve(async (req) => {
       },
     )
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error in analyze-ingredients function:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
