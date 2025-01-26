@@ -8,12 +8,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useState, useRef } from "react";
+import { createWorker } from 'tesseract.js';
+import { useToast } from "@/hooks/use-toast";
 
 export const Scanner = () => {
   const [showCamera, setShowCamera] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const { toast } = useToast();
 
   const startCamera = async () => {
     try {
@@ -26,6 +30,11 @@ export const Scanner = () => {
       }
     } catch (err) {
       console.error("Error accessing camera:", err);
+      toast({
+        title: "Camera Error",
+        description: "Unable to access camera. Please check permissions.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -61,9 +70,62 @@ export const Scanner = () => {
     handleCloseCamera();
   };
 
-  const handleScanIngredients = () => {
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCapturedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const extractText = async () => {
+    if (!capturedImage) return;
+
+    setIsProcessing(true);
+    toast({
+      title: "Processing Image",
+      description: "Extracting text from image...",
+    });
+
+    try {
+      const worker = await createWorker();
+      await worker.loadLanguage('eng');
+      await worker.initialize('eng');
+      
+      const { data: { text } } = await worker.recognize(capturedImage);
+      
+      await worker.terminate();
+
+      console.log("Extracted text:", text);
+      
+      toast({
+        title: "Text Extracted",
+        description: "Text has been successfully extracted from the image.",
+      });
+
+      // Here you can handle the extracted text as needed
+      handleScanIngredients(text);
+    } catch (error) {
+      console.error("Error extracting text:", error);
+      toast({
+        title: "Extraction Error",
+        description: "Failed to extract text from the image.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleScanIngredients = (extractedText?: string) => {
     // Here you would implement the ingredient scanning logic
     console.log("Scanning ingredients from image:", capturedImage);
+    if (extractedText) {
+      console.log("Extracted text:", extractedText);
+    }
   };
 
   const resetCapture = () => {
@@ -90,9 +152,21 @@ export const Scanner = () => {
               <Camera className="mr-2 h-5 w-5" />
               Take Photo
             </Button>
-            <Button variant="secondary" className="scale-animation w-full" size="lg">
+            <Button 
+              variant="secondary" 
+              className="scale-animation w-full" 
+              size="lg"
+              onClick={() => document.getElementById('file-upload')?.click()}
+            >
               <Upload className="mr-2 h-5 w-5" />
               Upload
+              <input
+                id="file-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
             </Button>
           </div>
         ) : (
@@ -115,10 +189,11 @@ export const Scanner = () => {
             <Button 
               className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED]" 
               size="lg"
-              onClick={handleScanIngredients}
+              onClick={extractText}
+              disabled={isProcessing}
             >
               <Scan className="mr-2 h-5 w-5" />
-              Scan Ingredients
+              {isProcessing ? "Processing..." : "Extract Text"}
             </Button>
           </div>
         )}
