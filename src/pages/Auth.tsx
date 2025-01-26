@@ -8,7 +8,7 @@ const Auth = () => {
       <div className="w-full max-w-sm space-y-8">
         <div className="flex justify-center">
           <img
-            src="/lovable-uploads/7b67eb30-d42a-40a0-b139-af164902e1fb.png"
+            src="/lovable-uploads/3d045043-e078-46c6-9577-58cb24afec2a.png"
             alt="PurrfectDiet Logo"
             className="h-12"
           />
