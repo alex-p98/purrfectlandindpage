@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { useState } from "react";
 import { CameraCapture } from "./scanner/CameraCapture";
 import { ImagePreview } from "./scanner/ImagePreview";
+import { PawRating } from "./scanner/PawRating";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -70,10 +71,8 @@ export const Scanner = () => {
         throw new Error('Failed to analyze ingredients');
       }
 
-      // Convert the score from 10 to 5
-      const convertedScore = Math.round((analysisData.score / 10) * 5);
       setHealthScore({
-        score: convertedScore,
+        score: analysisData.score,
         explanation: analysisData.explanation
       });
       
@@ -143,18 +142,12 @@ export const Scanner = () => {
             />
             
             {healthScore && (
-              <div className="p-4 bg-muted rounded-lg space-y-2">
-                <div className="flex items-center justify-between">
+              <div className="p-4 bg-muted rounded-lg space-y-4">
+                <div className="flex flex-col items-center gap-2">
                   <span className="font-medium">Health Score:</span>
-                  <span className={`text-lg font-bold ${
-                    healthScore.score >= 4 ? 'text-green-500' :
-                    healthScore.score >= 2 ? 'text-yellow-500' :
-                    'text-red-500'
-                  }`}>
-                    {healthScore.score}/5
-                  </span>
+                  <PawRating score={healthScore.score} />
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground text-center">
                   {healthScore.explanation}
                 </p>
               </div>
