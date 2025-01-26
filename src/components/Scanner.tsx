@@ -1,4 +1,4 @@
-import { Camera, Upload } from "lucide-react";
+import { Camera, Upload, Scan, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -11,6 +11,7 @@ import { useState, useRef } from "react";
 
 export const Scanner = () => {
   const [showCamera, setShowCamera] = useState(false);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
 
@@ -53,13 +54,20 @@ export const Scanner = () => {
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.drawImage(videoRef.current, 0, 0);
-        // You can handle the captured image data here
-        // For example, convert to base64:
         const imageData = canvas.toDataURL('image/jpeg');
-        console.log('Captured image:', imageData);
+        setCapturedImage(imageData);
       }
     }
     handleCloseCamera();
+  };
+
+  const handleScanIngredients = () => {
+    // Here you would implement the ingredient scanning logic
+    console.log("Scanning ingredients from image:", capturedImage);
+  };
+
+  const resetCapture = () => {
+    setCapturedImage(null);
   };
 
   return (
@@ -72,20 +80,48 @@ export const Scanner = () => {
           Take a photo or upload an image of your cat food ingredients
         </p>
         
-        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xs">
-          <Button 
-            className="scale-animation w-full" 
-            size="lg"
-            onClick={handleOpenCamera}
-          >
-            <Camera className="mr-2 h-5 w-5" />
-            Take Photo
-          </Button>
-          <Button variant="secondary" className="scale-animation w-full" size="lg">
-            <Upload className="mr-2 h-5 w-5" />
-            Upload
-          </Button>
-        </div>
+        {!capturedImage ? (
+          <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xs">
+            <Button 
+              className="scale-animation w-full" 
+              size="lg"
+              onClick={handleOpenCamera}
+            >
+              <Camera className="mr-2 h-5 w-5" />
+              Take Photo
+            </Button>
+            <Button variant="secondary" className="scale-animation w-full" size="lg">
+              <Upload className="mr-2 h-5 w-5" />
+              Upload
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4 w-full max-w-xs">
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg">
+              <img 
+                src={capturedImage} 
+                alt="Captured ingredient list" 
+                className="w-full h-full object-cover"
+              />
+              <Button
+                variant="secondary"
+                size="icon"
+                className="absolute top-2 right-2 rounded-full"
+                onClick={resetCapture}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <Button 
+              className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED]" 
+              size="lg"
+              onClick={handleScanIngredients}
+            >
+              <Scan className="mr-2 h-5 w-5" />
+              Scan Ingredients
+            </Button>
+          </div>
+        )}
       </Card>
 
       <Dialog open={showCamera} onOpenChange={handleCloseCamera}>
