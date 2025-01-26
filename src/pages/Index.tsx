@@ -2,10 +2,11 @@ import { Header } from "@/components/Header";
 import { Scanner } from "@/components/Scanner";
 import { CatProfile } from "@/components/CatProfile";
 import { RecentScans } from "@/components/RecentScans";
+import { BottomNav } from "@/components/BottomNav";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background pt-16">
+    <div className="min-h-screen bg-background pt-16 pb-20">
       <Header />
       <main className="container max-w-md mx-auto pt-16 sm:pt-8 p-4 space-y-8">
         <Scanner />
@@ -20,6 +21,7 @@ const Index = () => {
 
         <RecentScans />
       </main>
+      <BottomNav />
     </div>
   );
 };
