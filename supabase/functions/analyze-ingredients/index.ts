@@ -36,14 +36,14 @@ serve(async (req) => {
             role: 'user',
             content: [
               {
-                type: 'image',
+                type: 'text',
+                text: "Please analyze these cat food ingredients and provide a health score out of 10 along with a brief explanation."
+              },
+              {
+                type: 'image_url',
                 image_url: {
                   url: image
                 }
-              },
-              {
-                type: 'text',
-                text: "Please analyze these cat food ingredients and provide a health score out of 10 along with a brief explanation."
               }
             ]
           }
