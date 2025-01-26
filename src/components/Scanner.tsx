@@ -1,4 +1,4 @@
-import { Camera, Upload, Scan, X } from "lucide-react";
+import { Camera, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -8,14 +8,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useState, useRef } from "react";
-import { createWorker } from 'tesseract.js';
-import type { Worker } from 'tesseract.js';
 import { useToast } from "@/hooks/use-toast";
 
 export const Scanner = () => {
   const [showCamera, setShowCamera] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const { toast } = useToast();
@@ -82,52 +79,8 @@ export const Scanner = () => {
     }
   };
 
-  const extractText = async () => {
-    if (!capturedImage) return;
-
-    setIsProcessing(true);
-    toast({
-      title: "Processing Image",
-      description: "Extracting text from image...",
-    });
-
-    try {
-      const worker = await createWorker();
-      await worker.load();
-      await worker.loadLanguage('eng');
-      await worker.initialize('eng');
-      
-      const { data: { text } } = await worker.recognize(capturedImage);
-      
-      await worker.terminate();
-
-      console.log("Extracted text:", text);
-      
-      toast({
-        title: "Text Extracted",
-        description: "Text has been successfully extracted from the image.",
-      });
-
-      // Here you can handle the extracted text as needed
-      handleScanIngredients(text);
-    } catch (error) {
-      console.error("Error extracting text:", error);
-      toast({
-        title: "Extraction Error",
-        description: "Failed to extract text from the image.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleScanIngredients = (extractedText?: string) => {
-    // Here you would implement the ingredient scanning logic
+  const handleScanIngredients = () => {
     console.log("Scanning ingredients from image:", capturedImage);
-    if (extractedText) {
-      console.log("Extracted text:", extractedText);
-    }
   };
 
   const resetCapture = () => {
@@ -191,11 +144,9 @@ export const Scanner = () => {
             <Button 
               className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED]" 
               size="lg"
-              onClick={extractText}
-              disabled={isProcessing}
+              onClick={handleScanIngredients}
             >
-              <Scan className="mr-2 h-5 w-5" />
-              {isProcessing ? "Processing..." : "Extract Text"}
+              Scan Ingredients
             </Button>
           </div>
         )}
