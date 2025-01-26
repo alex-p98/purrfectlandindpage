@@ -146,6 +146,11 @@ const CustomDiet = () => {
                 
                 <div className="space-y-4">
                   <div>
+                    <h4 className="text-lg text-primary/80">Breed</h4>
+                    <p className="text-xl">{selectedCat.breed}</p>
+                  </div>
+
+                  <div>
                     <h4 className="text-lg text-primary/80">Weight</h4>
                     <p className="text-xl">{selectedCat.weight}</p>
                   </div>
