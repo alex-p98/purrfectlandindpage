@@ -7,10 +7,60 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 export const Scanner = () => {
   const [showCamera, setShowCamera] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      setStream(mediaStream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+    }
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+  };
+
+  const handleOpenCamera = () => {
+    setShowCamera(true);
+    startCamera();
+  };
+
+  const handleCloseCamera = () => {
+    stopCamera();
+    setShowCamera(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current) {
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0);
+        // You can handle the captured image data here
+        // For example, convert to base64:
+        const imageData = canvas.toDataURL('image/jpeg');
+        console.log('Captured image:', imageData);
+      }
+    }
+    handleCloseCamera();
+  };
 
   return (
     <>
@@ -26,7 +76,7 @@ export const Scanner = () => {
           <Button 
             className="scale-animation w-full" 
             size="lg"
-            onClick={() => setShowCamera(true)}
+            onClick={handleOpenCamera}
           >
             <Camera className="mr-2 h-5 w-5" />
             Take Photo
@@ -38,23 +88,24 @@ export const Scanner = () => {
         </div>
       </Card>
 
-      <Dialog open={showCamera} onOpenChange={setShowCamera}>
+      <Dialog open={showCamera} onOpenChange={handleCloseCamera}>
         <DialogContent className="sm:max-w-md rounded-3xl">
           <DialogHeader>
             <DialogTitle>Take a Photo</DialogTitle>
           </DialogHeader>
-          <div className="aspect-video bg-muted rounded-2xl flex items-center justify-center">
-            <Camera className="h-10 w-10 text-muted-foreground" />
+          <div className="aspect-video bg-muted rounded-2xl overflow-hidden">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              className="w-full h-full object-cover"
+            />
           </div>
           <div className="flex justify-center">
             <Button 
               size="lg" 
               className="rounded-full w-16 h-16 p-0"
-              onClick={() => {
-                // Here you would typically handle taking the photo
-                console.log("Photo captured");
-                setShowCamera(false);
-              }}
+              onClick={capturePhoto}
             >
               <div className="rounded-full w-12 h-12 border-4 border-background" />
             </Button>
