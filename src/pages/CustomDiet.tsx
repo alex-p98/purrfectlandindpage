@@ -30,23 +30,26 @@ const CustomDiet = () => {
     let currentSection: DietSection | null = null;
 
     lines.forEach(line => {
-      // New section starts with ###
-      if (line.startsWith('### ')) {
+      // Clean up the line by removing extra spaces and special characters
+      const cleanLine = line.trim().replace(/[""]/g, '"').replace(/['']/g, "'");
+      
+      if (cleanLine.startsWith('### ')) {
         if (currentSection) {
           sections.push(currentSection);
         }
         currentSection = {
-          title: line.replace('### ', '').trim(),
+          title: cleanLine.replace('### ', '').trim(),
           content: []
         };
       } 
-      // Add content lines (starting with -) to current section
-      else if (line.startsWith('- ') && currentSection) {
-        currentSection.content.push(line.replace('- ', '').trim());
+      else if (cleanLine.startsWith('- ') && currentSection) {
+        const content = cleanLine.replace('- ', '').trim();
+        if (content) { // Only add non-empty content
+          currentSection.content.push(content);
+        }
       }
     });
 
-    // Add the last section
     if (currentSection) {
       sections.push(currentSection);
     }
@@ -92,13 +95,13 @@ const CustomDiet = () => {
     <div className="min-h-screen bg-background pt-16 pb-20">
       <main className="container max-w-md mx-auto p-6 space-y-8">
         <div>
-          <h1 className="text-3xl font-bold mb-6">Custom Diet</h1>
+          <h1 className="text-3xl font-bold mb-6 text-primary">Custom Diet</h1>
           
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-semibold mb-4">Select Your Cat</h2>
+              <h2 className="text-xl font-semibold mb-4 text-primary/80">Select Your Cat</h2>
               
-              <Card className="p-4 w-[140px] flex flex-col items-center gap-2 cursor-pointer hover:bg-accent/50 transition-colors"
+              <Card className="p-4 w-[140px] flex flex-col items-center gap-2 cursor-pointer hover:bg-accent/50 transition-colors border-primary/20"
                     onClick={() => setSelectedCat({
                       name: "Whiskers",
                       weight: "4.5 kg",
@@ -126,7 +129,7 @@ const CustomDiet = () => {
             </div>
 
             {selectedCat && (
-              <Card className="p-6 space-y-6">
+              <Card className="p-6 space-y-6 border-primary/20 shadow-md">
                 <h3 className="text-xl font-semibold text-primary">Cat Information</h3>
                 
                 <div className="space-y-4">
@@ -152,8 +155,7 @@ const CustomDiet = () => {
                 </div>
 
                 <Button 
-                  className="w-full text-lg py-6"
-                  variant="default"
+                  className="w-full text-lg py-6 bg-primary hover:bg-primary/90"
                   onClick={handleGenerateDiet}
                   disabled={isGenerating}
                 >
@@ -164,14 +166,17 @@ const CustomDiet = () => {
 
             {dietSections.length > 0 && (
               <div className="space-y-6">
-                <h3 className="text-2xl font-semibold">Custom Diet Plan</h3>
+                <h3 className="text-2xl font-semibold text-primary">Custom Diet Plan</h3>
                 
                 {dietSections.map((section, index) => (
-                  <Card key={index} className="p-6">
+                  <Card key={index} className="p-6 border-primary/20 shadow-md hover:shadow-lg transition-shadow">
                     <h4 className="text-xl font-semibold text-primary mb-4">{section.title}</h4>
-                    <ul className="list-disc pl-6 space-y-2">
+                    <ul className="space-y-3">
                       {section.content.map((item, idx) => (
-                        <li key={idx} className="text-muted-foreground">{item}</li>
+                        <li key={idx} className="text-muted-foreground flex items-start gap-2">
+                          <span className="text-primary mt-1.5">•</span>
+                          <span>{item}</span>
+                        </li>
                       ))}
                     </ul>
                   </Card>
