@@ -62,7 +62,6 @@ export const Scanner = () => {
 
     setIsScanning(true);
     try {
-      // Analyze with GPT-4o directly through our edge function
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-ingredients', {
         body: { image: capturedImage },
       });
@@ -71,7 +70,13 @@ export const Scanner = () => {
         throw new Error('Failed to analyze ingredients');
       }
 
-      setHealthScore(analysisData);
+      // Convert the score from 10 to 5
+      const convertedScore = Math.round((analysisData.score / 10) * 5);
+      setHealthScore({
+        score: convertedScore,
+        explanation: analysisData.explanation
+      });
+      
       toast({
         title: "Analysis complete",
         description: "Your ingredients have been successfully analyzed",
@@ -142,11 +147,11 @@ export const Scanner = () => {
                 <div className="flex items-center justify-between">
                   <span className="font-medium">Health Score:</span>
                   <span className={`text-lg font-bold ${
-                    healthScore.score >= 7 ? 'text-green-500' :
-                    healthScore.score >= 4 ? 'text-yellow-500' :
+                    healthScore.score >= 4 ? 'text-green-500' :
+                    healthScore.score >= 2 ? 'text-yellow-500' :
                     'text-red-500'
                   }`}>
-                    {healthScore.score}/10
+                    {healthScore.score}/5
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground">
