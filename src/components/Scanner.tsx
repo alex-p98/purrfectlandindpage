@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { useState, useRef } from "react";
 import { createWorker } from 'tesseract.js';
+import type { Worker } from 'tesseract.js';
 import { useToast } from "@/hooks/use-toast";
 
 export const Scanner = () => {
@@ -92,6 +93,7 @@ export const Scanner = () => {
 
     try {
       const worker = await createWorker();
+      await worker.load();
       await worker.loadLanguage('eng');
       await worker.initialize('eng');
       
