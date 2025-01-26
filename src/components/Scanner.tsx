@@ -5,11 +5,13 @@ import { useState } from "react";
 import { CameraCapture } from "./scanner/CameraCapture";
 import { ImagePreview } from "./scanner/ImagePreview";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Scanner = () => {
   const [showCamera, setShowCamera] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [healthScore, setHealthScore] = useState<{ score: number; explanation: string } | null>(null);
   const { toast } = useToast();
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,6 +40,7 @@ export const Scanner = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setCapturedImage(reader.result as string);
+        setHealthScore(null);
         toast({
           title: "Image uploaded",
           description: "Your image has been successfully uploaded",
@@ -101,32 +104,46 @@ export const Scanner = () => {
       // Compress the image before sending
       const compressedImage = await compressImage(capturedImage);
       
-      const response = await fetch('https://hook.us2.make.com/8yfg9zxxf24ttnq2qmvlfcy3uzjbt4db', {
+      // First, send to Make.com webhook
+      const webhookResponse = await fetch('https://hook.us2.make.com/8yfg9zxxf24ttnq2qmvlfcy3uzjbt4db', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          image: compressedImage.split(',')[1], // Remove the data:image/jpeg;base64, prefix
+          image: compressedImage.split(',')[1],
           format: 'base64',
           mimeType: 'image/jpeg',
           timestamp: new Date().toISOString(),
         }),
       });
 
-      if (!response.ok) {
+      if (!webhookResponse.ok) {
         throw new Error('Failed to scan ingredients');
       }
 
+      const webhookData = await webhookResponse.text();
+      console.log('Webhook response:', webhookData);
+
+      // Then, analyze with GPT-4
+      const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-ingredients', {
+        body: { ingredients: webhookData },
+      });
+
+      if (analysisError) {
+        throw new Error('Failed to analyze ingredients');
+      }
+
+      setHealthScore(analysisData);
       toast({
-        title: "Scan complete",
-        description: "Your ingredients have been successfully scanned",
+        title: "Analysis complete",
+        description: "Your ingredients have been successfully analyzed",
       });
     } catch (error) {
       console.error('Scanning error:', error);
       toast({
         title: "Scan failed",
-        description: "Failed to scan ingredients. Please try again.",
+        description: "Failed to analyze ingredients. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -172,12 +189,35 @@ export const Scanner = () => {
             </Button>
           </div>
         ) : (
-          <ImagePreview 
-            imageUrl={capturedImage}
-            onReset={() => setCapturedImage(null)}
-            onScan={handleScanIngredients}
-            isScanning={isScanning}
-          />
+          <div className="space-y-6 w-full max-w-xs">
+            <ImagePreview 
+              imageUrl={capturedImage}
+              onReset={() => {
+                setCapturedImage(null);
+                setHealthScore(null);
+              }}
+              onScan={handleScanIngredients}
+              isScanning={isScanning}
+            />
+            
+            {healthScore && (
+              <div className="p-4 bg-muted rounded-lg space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Health Score:</span>
+                  <span className={`text-lg font-bold ${
+                    healthScore.score >= 7 ? 'text-green-500' :
+                    healthScore.score >= 4 ? 'text-yellow-500' :
+                    'text-red-500'
+                  }`}>
+                    {healthScore.score}/10
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {healthScore.explanation}
+                </p>
+              </div>
+            )}
+          </div>
         )}
       </Card>
 
