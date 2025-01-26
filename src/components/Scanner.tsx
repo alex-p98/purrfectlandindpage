@@ -4,17 +4,50 @@ import { Card } from "@/components/ui/card";
 import { useState } from "react";
 import { CameraCapture } from "./scanner/CameraCapture";
 import { ImagePreview } from "./scanner/ImagePreview";
+import { useToast } from "@/hooks/use-toast";
 
 export const Scanner = () => {
   const [showCamera, setShowCamera] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Check if the file is an image
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please upload an image smaller than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setCapturedImage(reader.result as string);
+        toast({
+          title: "Image uploaded",
+          description: "Your image has been successfully uploaded",
+        });
+      };
+      reader.onerror = () => {
+        toast({
+          title: "Upload failed",
+          description: "Failed to read the image file",
+          variant: "destructive",
+        });
       };
       reader.readAsDataURL(file);
     }
