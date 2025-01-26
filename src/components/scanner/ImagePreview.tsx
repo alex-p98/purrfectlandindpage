@@ -5,9 +5,10 @@ interface ImagePreviewProps {
   imageUrl: string;
   onReset: () => void;
   onScan: () => void;
+  isScanning?: boolean;
 }
 
-export const ImagePreview = ({ imageUrl, onReset, onScan }: ImagePreviewProps) => {
+export const ImagePreview = ({ imageUrl, onReset, onScan, isScanning = false }: ImagePreviewProps) => {
   return (
     <div className="space-y-4 w-full max-w-xs">
       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg">
@@ -21,6 +22,7 @@ export const ImagePreview = ({ imageUrl, onReset, onScan }: ImagePreviewProps) =
           size="icon"
           className="absolute top-2 right-2 rounded-full"
           onClick={onReset}
+          disabled={isScanning}
         >
           <X className="h-4 w-4" />
         </Button>
@@ -29,8 +31,9 @@ export const ImagePreview = ({ imageUrl, onReset, onScan }: ImagePreviewProps) =
         className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED]" 
         size="lg"
         onClick={onScan}
+        disabled={isScanning}
       >
-        Scan Ingredients
+        {isScanning ? "Scanning..." : "Scan Ingredients"}
       </Button>
     </div>
   );

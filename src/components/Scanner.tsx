@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 export const Scanner = () => {
   const [showCamera, setShowCamera] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
   const { toast } = useToast();
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,8 +54,39 @@ export const Scanner = () => {
     }
   };
 
-  const handleScanIngredients = () => {
-    console.log("Scanning ingredients from image:", capturedImage);
+  const handleScanIngredients = async () => {
+    if (!capturedImage) return;
+
+    setIsScanning(true);
+    try {
+      const response = await fetch('https://hook.us2.make.com/8yfg9zxxf24ttnq2qmvlfcy3uzjbt4db', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: capturedImage,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to scan ingredients');
+      }
+
+      toast({
+        title: "Scan complete",
+        description: "Your ingredients have been successfully scanned",
+      });
+    } catch (error) {
+      toast({
+        title: "Scan failed",
+        description: "Failed to scan ingredients. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsScanning(false);
+    }
   };
 
   return (
@@ -99,6 +131,7 @@ export const Scanner = () => {
             imageUrl={capturedImage}
             onReset={() => setCapturedImage(null)}
             onScan={handleScanIngredients}
+            isScanning={isScanning}
           />
         )}
       </Card>
