@@ -6,7 +6,7 @@ import { BottomNav } from "@/components/BottomNav";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background pt-16 pb-20">
+    <div className="min-h-screen bg-background pb-20">
       <Header />
       <main className="container max-w-md mx-auto pt-16 sm:pt-8 p-4 space-y-8">
         <Scanner />
