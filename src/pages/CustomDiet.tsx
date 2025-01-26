@@ -14,14 +14,7 @@ interface CatInfo {
 }
 
 const CustomDiet = () => {
-  const [selectedCat, setSelectedCat] = useState<CatInfo | null>({
-    name: "Whiskers",
-    weight: "4.5 kg",
-    age: "3 years",
-    allergies: "Fish, Dairy",
-    healthCondition: "Generally healthy, regular checkups required",
-    image: "/lovable-uploads/ae15ab81-e4b2-4296-8454-d8ee35d09389.png"
-  });
+  const [selectedCat, setSelectedCat] = useState<CatInfo | null>(null);
 
   return (
     <div className="min-h-screen bg-background pt-16 pb-20">
@@ -52,6 +45,12 @@ const CustomDiet = () => {
                 </Avatar>
                 <span className="text-sm font-medium">Whiskers</span>
               </Card>
+
+              {!selectedCat && (
+                <p className="text-muted-foreground text-sm mt-4">
+                  Select a cat to view their information and generate a custom diet
+                </p>
+              )}
             </div>
 
             {selectedCat && (
