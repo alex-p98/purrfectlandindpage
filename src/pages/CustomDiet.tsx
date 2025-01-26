@@ -9,6 +9,7 @@ interface CatInfo {
   name: string;
   weight: string;
   age: string;
+  breed: string;
   allergies: string;
   healthCondition: string;
   image: string;
@@ -33,8 +34,8 @@ const CustomDiet = () => {
       const cleanLine = line.trim()
         .replace(/[""]/g, '"')
         .replace(/['']/g, "'")
-        .replace(/\*\*/g, '') // Remove double asterisks
-        .replace(/\*/g, '');  // Remove single asterisks
+        .replace(/\*\*/g, '')
+        .replace(/\*/g, '');
       
       if (cleanLine.startsWith('### ')) {
         if (currentSection) {
@@ -47,7 +48,7 @@ const CustomDiet = () => {
       } 
       else if (cleanLine.startsWith('- ') && currentSection) {
         const content = cleanLine.replace('- ', '').trim();
-        if (content) { // Only add non-empty content
+        if (content) {
           currentSection.content.push(content);
         }
       }
@@ -75,7 +76,14 @@ const CustomDiet = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(selectedCat)
+        body: JSON.stringify({
+          name: selectedCat.name,
+          breed: selectedCat.breed,
+          weight: selectedCat.weight,
+          age: selectedCat.age,
+          allergies: selectedCat.allergies,
+          healthCondition: selectedCat.healthCondition
+        })
       });
 
       if (!response.ok) {
@@ -107,6 +115,7 @@ const CustomDiet = () => {
               <Card className="p-4 w-[140px] flex flex-col items-center gap-2 cursor-pointer hover:bg-accent/50 transition-colors border-primary/20"
                     onClick={() => setSelectedCat({
                       name: "Whiskers",
+                      breed: "Tuxedo",
                       weight: "4.5 kg",
                       age: "3 years",
                       allergies: "Fish, Dairy",
