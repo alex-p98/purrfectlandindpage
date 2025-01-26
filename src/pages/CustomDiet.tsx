@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface CatInfo {
   name: string;
@@ -15,6 +16,37 @@ interface CatInfo {
 
 const CustomDiet = () => {
   const [selectedCat, setSelectedCat] = useState<CatInfo | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGenerateDiet = async () => {
+    if (!selectedCat) {
+      toast.error("Please select a cat first");
+      return;
+    }
+
+    setIsGenerating(true);
+    
+    try {
+      const response = await fetch('https://hook.us2.make.com/om2urxc9mn2w7e6q4x6v8sttde8tqai2', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(selectedCat)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate diet');
+      }
+
+      toast.success("Custom diet plan is being generated! You'll receive it soon.");
+    } catch (error) {
+      console.error('Error generating diet:', error);
+      toast.error("Failed to generate diet. Please try again later.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background pt-16 pb-20">
@@ -82,8 +114,10 @@ const CustomDiet = () => {
                 <Button 
                   className="w-full text-lg py-6"
                   variant="default"
+                  onClick={handleGenerateDiet}
+                  disabled={isGenerating}
                 >
-                  Generate Custom Diet
+                  {isGenerating ? "Generating..." : "Generate Custom Diet"}
                 </Button>
               </Card>
             )}
