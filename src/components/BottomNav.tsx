@@ -1,9 +1,22 @@
-import { Home, Utensils, User } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Home, Utensils, LogIn, LogOut } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 
 export const BottomNav = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { session, signOut } = useAuth();
   const isActive = (path: string) => location.pathname === path;
+
+  const handleAuthAction = async () => {
+    if (session) {
+      await signOut();
+      navigate("/");
+    } else {
+      navigate("/auth");
+    }
+  };
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 px-4">
@@ -28,15 +41,23 @@ export const BottomNav = () => {
           <span className="text-xs">Custom Diet</span>
         </Link>
         
-        <Link 
-          to="/profile" 
-          className={`flex flex-col items-center gap-1 ${
-            isActive("/profile") ? "text-primary" : "text-gray-500"
-          }`}
+        <Button
+          variant="ghost"
+          className="flex flex-col items-center gap-1 h-auto py-0"
+          onClick={handleAuthAction}
         >
-          <User size={24} />
-          <span className="text-xs">Profile</span>
-        </Link>
+          {session ? (
+            <>
+              <LogOut size={24} />
+              <span className="text-xs">Sign Out</span>
+            </>
+          ) : (
+            <>
+              <LogIn size={24} />
+              <span className="text-xs">Sign In</span>
+            </>
+          )}
+        </Button>
       </div>
     </nav>
   );
