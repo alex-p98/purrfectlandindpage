@@ -57,77 +57,14 @@ export const Scanner = () => {
     }
   };
 
-  const compressImage = async (base64String: string): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 800;
-        const MAX_HEIGHT = 800;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('Failed to get canvas context'));
-          return;
-        }
-
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', 0.7));
-      };
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = base64String;
-    });
-  };
-
   const handleScanIngredients = async () => {
     if (!capturedImage) return;
 
     setIsScanning(true);
     try {
-      // Compress the image before sending
-      const compressedImage = await compressImage(capturedImage);
-      
-      // First, send to Make.com webhook
-      const webhookResponse = await fetch('https://hook.us2.make.com/8yfg9zxxf24ttnq2qmvlfcy3uzjbt4db', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          image: compressedImage.split(',')[1],
-          format: 'base64',
-          mimeType: 'image/jpeg',
-          timestamp: new Date().toISOString(),
-        }),
-      });
-
-      if (!webhookResponse.ok) {
-        throw new Error('Failed to scan ingredients');
-      }
-
-      const webhookData = await webhookResponse.text();
-      console.log('Webhook response:', webhookData);
-
-      // Then, analyze with GPT-4
+      // Analyze with GPT-4o directly through our edge function
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-ingredients', {
-        body: { ingredients: webhookData },
+        body: { image: capturedImage },
       });
 
       if (analysisError) {

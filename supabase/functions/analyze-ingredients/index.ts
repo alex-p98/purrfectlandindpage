@@ -1,26 +1,25 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import "https://deno.land/x/xhr@0.1.0/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // Handle CORS
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const { ingredients } = await req.json();
+    const { image } = await req.json()
 
+    // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -28,40 +27,63 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a cat nutrition expert. Analyze cat food ingredients and provide a health score from 1-10, where 10 is the healthiest. Also provide a brief explanation of the score. Return the response in JSON format with "score" and "explanation" fields.'
+            content: `You are a cat nutrition expert. Analyze the ingredients in cat food images and provide:
+              1. A health score from 1-10
+              2. A brief explanation of the score
+              Focus on nutritional value, quality of ingredients, and presence of fillers or harmful additives.`
           },
           {
             role: 'user',
-            content: `Analyze these cat food ingredients and provide a health score: ${ingredients}`
+            content: [
+              {
+                type: 'image',
+                image_url: {
+                  url: image
+                }
+              },
+              {
+                type: 'text',
+                text: "Please analyze these cat food ingredients and provide a health score out of 10 along with a brief explanation."
+              }
+            ]
           }
         ],
+        max_tokens: 500
       }),
-    });
+    })
 
-    const data = await response.json();
-    console.log('OpenAI Response:', data);
-
-    let result;
-    try {
-      // Try to parse the response as JSON
-      result = JSON.parse(data.choices[0].message.content);
-    } catch (e) {
-      // If parsing fails, create a structured response from the raw text
-      const content = data.choices[0].message.content;
-      result = {
-        score: parseInt(content.match(/\d+/)[0]) || 5,
-        explanation: content
-      };
+    const data = await response.json()
+    
+    if (!response.ok) {
+      throw new Error(data.error?.message || 'Failed to analyze ingredients')
     }
 
-    return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    const content = data.choices[0].message.content
+    
+    // Parse the response to extract score and explanation
+    const scoreMatch = content.match(/(\d+)\/10|(\d+)\s*out of\s*10/)
+    const score = scoreMatch ? parseInt(scoreMatch[1] || scoreMatch[2]) : 5
+    
+    // Remove the score from the content to get just the explanation
+    const explanation = content.replace(/(\d+)\/10|(\d+)\s*out of\s*10/, '').trim()
+
+    return new Response(
+      JSON.stringify({
+        score,
+        explanation
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      },
+    )
   } catch (error) {
-    console.error('Error in analyze-ingredients function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('Error:', error)
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      },
+    )
   }
-});
+})
