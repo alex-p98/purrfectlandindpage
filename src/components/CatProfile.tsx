@@ -6,9 +6,10 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface CatProfileProps {
   name?: string;
+  imageUrl?: string | null;
 }
 
-export const CatProfile = ({ name }: CatProfileProps) => {
+export const CatProfile = ({ name, imageUrl }: CatProfileProps) => {
   const navigate = useNavigate();
 
   if (!name) {
@@ -30,7 +31,7 @@ export const CatProfile = ({ name }: CatProfileProps) => {
     >
       <Avatar className="w-20 h-20">
         <AvatarImage 
-          src="/lovable-uploads/ae15ab81-e4b2-4296-8454-d8ee35d09389.png" 
+          src={imageUrl || "/placeholder.svg"} 
           alt={name}
           className="object-cover"
         />
