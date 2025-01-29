@@ -2,7 +2,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Edit, Heart, Weight, Stethoscope, AlertCircle } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { CameraCapture } from "@/components/scanner/CameraCapture";
@@ -17,6 +17,7 @@ const CatProfile = () => {
   const { name } = useParams();
   const { session } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: catData, isLoading } = useQuery({
     queryKey: ['cat', name],
@@ -40,6 +41,12 @@ const CatProfile = () => {
     handleFileUpload,
     handleCapture,
   } = useProfilePicture(catData?.id);
+
+  const handleEditSuccess = () => {
+    setIsEditing(false);
+    // Invalidate and refetch the cat query
+    queryClient.invalidateQueries({ queryKey: ['cat', name] });
+  };
 
   const formatWeight = (weight: string | null) => {
     if (!weight) return 'Not specified';
@@ -101,7 +108,7 @@ const CatProfile = () => {
           </div>
           <EditCatForm 
             cat={catData} 
-            onSuccess={() => setIsEditing(false)} 
+            onSuccess={handleEditSuccess} 
             onCancel={() => setIsEditing(false)} 
           />
         </main>
