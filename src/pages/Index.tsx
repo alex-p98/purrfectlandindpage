@@ -1,7 +1,6 @@
 import { Header } from "@/components/Header";
 import { Scanner } from "@/components/Scanner";
 import { CatProfile } from "@/components/CatProfile";
-import { RecentScans } from "@/components/RecentScans";
 import { BottomNav } from "@/components/BottomNav";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,8 +72,6 @@ const Index = () => {
             </div>
           )}
         </div>
-
-        <RecentScans />
       </main>
       <BottomNav />
     </div>
