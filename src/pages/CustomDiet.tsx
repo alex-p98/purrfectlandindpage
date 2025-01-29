@@ -8,22 +8,28 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
-
-interface CatInfo {
-  id: string;
-  name: string;
-  weight: string;
-  age: string;
-  breed: string;
-  allergies: string;
-  health_condition: string;
-  image_url: string;
-  diet_plan?: DietSection[];
-}
+import type { Json } from "@/integrations/supabase/types";
 
 interface DietSection {
   title: string;
   content: string[];
+}
+
+// Update CatInfo to match the database schema
+interface CatInfo {
+  id: string;
+  name: string;
+  weight: string | null;
+  age: string;
+  breed: string;
+  allergies: string | null;
+  health_condition: string | null;
+  image_url: string | null;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  notes: string | null;
+  diet_plan: DietSection[] | null;
 }
 
 const CustomDiet = () => {
@@ -42,7 +48,12 @@ const CustomDiet = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as CatInfo[];
+      
+      // Transform the data to ensure diet_plan is properly typed
+      return (data as any[]).map(cat => ({
+        ...cat,
+        diet_plan: cat.diet_plan as DietSection[] | null
+      })) as CatInfo[];
     },
     enabled: !!session?.user.id,
   });
@@ -51,7 +62,7 @@ const CustomDiet = () => {
     mutationFn: async ({ catId, dietPlan }: { catId: string; dietPlan: DietSection[] }) => {
       const { error } = await supabase
         .from('cats')
-        .update({ diet_plan: dietPlan })
+        .update({ diet_plan: dietPlan as unknown as Json })
         .eq('id', catId);
 
       if (error) throw error;
