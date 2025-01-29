@@ -2,9 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { CameraCapture } from "./scanner/CameraCapture";
-import { ProfilePicture } from "./cat/ProfilePicture";
-import { useProfilePicture } from "./cat/useProfilePicture";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface CatProfileProps {
   name?: string;
@@ -14,13 +12,6 @@ interface CatProfileProps {
 
 export const CatProfile = ({ name, imageUrl, id }: CatProfileProps) => {
   const navigate = useNavigate();
-  const {
-    showCamera,
-    setShowCamera,
-    fileInputRef,
-    handleFileUpload,
-    handleCapture,
-  } = useProfilePicture(id);
 
   if (!name) {
     return (
@@ -35,35 +26,22 @@ export const CatProfile = ({ name, imageUrl, id }: CatProfileProps) => {
   }
 
   return (
-    <>
-      <input
-        type="file"
-        ref={fileInputRef}
-        className="hidden"
-        accept="image/*"
-        onChange={handleFileUpload}
-      />
-      <Card
-        className="p-6 flex flex-col items-center justify-center gap-3 min-h-[200px] cursor-pointer scale-animation relative group"
-        onClick={() => navigate(`/cats/${name.toLowerCase()}`)}
-      >
-        <ProfilePicture
-          imageUrl={imageUrl}
-          name={name}
-          onCameraClick={() => setShowCamera(true)}
-          onUploadClick={() => fileInputRef.current?.click()}
+    <Card
+      className="p-6 flex flex-col items-center justify-center gap-3 min-h-[200px] cursor-pointer scale-animation"
+      onClick={() => navigate(`/cats/${name.toLowerCase()}`)}
+    >
+      <Avatar className="w-20 h-20">
+        <AvatarImage 
+          src={imageUrl || "/placeholder.svg"} 
+          alt={name}
+          className="object-cover"
         />
-        <h3 className="font-medium">{name}</h3>
-        <Button variant="secondary" size="sm" className="scale-animation">
-          View Profile
-        </Button>
-      </Card>
-
-      <CameraCapture
-        open={showCamera}
-        onClose={() => setShowCamera(false)}
-        onCapture={handleCapture}
-      />
-    </>
+        <AvatarFallback>{name[0]}</AvatarFallback>
+      </Avatar>
+      <h3 className="font-medium">{name}</h3>
+      <Button variant="secondary" size="sm" className="scale-animation">
+        View Profile
+      </Button>
+    </Card>
   );
 };

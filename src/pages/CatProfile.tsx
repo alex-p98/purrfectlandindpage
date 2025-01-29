@@ -2,10 +2,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Edit, Heart, Weight, Stethoscope, AlertCircle } from "lucide-react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { CameraCapture } from "@/components/scanner/CameraCapture";
+import { ProfilePicture } from "@/components/cat/ProfilePicture";
+import { useProfilePicture } from "@/components/cat/useProfilePicture";
 
 const CatProfile = () => {
   const navigate = useNavigate();
@@ -30,25 +32,29 @@ const CatProfile = () => {
     enabled: !!session?.user.id && !!name,
   });
 
+  const {
+    showCamera,
+    setShowCamera,
+    fileInputRef,
+    handleFileUpload,
+    handleCapture,
+  } = useProfilePicture(catData?.id);
+
   const formatWeight = (weight: string | null) => {
     if (!weight) return 'Not specified';
     
-    // Check if weight contains 'kg' or 'kilos'
     const isKilos = weight.toLowerCase().includes('kg') || 
                    weight.toLowerCase().includes('kilo');
     
-    // Extract the numeric value
     const numericWeight = parseFloat(weight.replace(/[^\d.]/g, ''));
     
     if (isNaN(numericWeight)) return weight;
     
     if (isKilos) {
-      // Convert kilos to pounds (1 kg = 2.20462 pounds)
       const pounds = (numericWeight * 2.20462).toFixed(1);
       return `${pounds} lbs`;
     }
     
-    // If weight is already in pounds or unspecified unit, assume pounds
     return `${numericWeight} lbs`;
   };
 
@@ -78,6 +84,13 @@ const CatProfile = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept="image/*"
+        onChange={handleFileUpload}
+      />
       <main className="container max-w-2xl mx-auto pt-8 p-4 space-y-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -92,16 +105,14 @@ const CatProfile = () => {
         </div>
 
         <div className="flex flex-col items-center gap-6">
-          <Avatar className="w-48 h-48 rounded-full border-4 border-primary">
-            <AvatarImage 
-              src={catData.image_url || "/placeholder.svg"} 
-              alt={catData.name} 
-              className="object-cover" 
+          <div className="relative group">
+            <ProfilePicture
+              imageUrl={catData.image_url}
+              name={catData.name}
+              onCameraClick={() => setShowCamera(true)}
+              onUploadClick={() => fileInputRef.current?.click()}
             />
-            <AvatarFallback className="text-4xl">
-              {catData.name[0].toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
+          </div>
           <div className="text-center">
             <h2 className="text-3xl font-bold mb-2">{catData.name}</h2>
             <p className="text-muted-foreground">{catData.breed}</p>
@@ -150,6 +161,12 @@ const CatProfile = () => {
           </CardContent>
         </Card>
       </main>
+
+      <CameraCapture
+        open={showCamera}
+        onClose={() => setShowCamera(false)}
+        onCapture={handleCapture}
+      />
     </div>
   );
 };
