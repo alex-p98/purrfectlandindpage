@@ -18,19 +18,16 @@ const CatProfile = () => {
   const { data: catData, isLoading } = useQuery({
     queryKey: ['cat', name],
     queryFn: async () => {
-      if (!session?.user.id) return null;
-      
       const { data, error } = await supabase
         .from('cats')
         .select('*')
-        .eq('user_id', session.user.id)
         .ilike('name', name || '')
-        .maybeSingle();  // Changed from .single() to .maybeSingle()
+        .maybeSingle();
 
       if (error) throw error;
       return data;
     },
-    enabled: !!session?.user.id && !!name,
+    enabled: !!name,
   });
 
   const {
@@ -79,7 +76,7 @@ const CatProfile = () => {
           </div>
           <Alert>
             <AlertDescription>
-              This cat profile doesn't exist or you don't have access to it.
+              This cat profile doesn't exist.
             </AlertDescription>
           </Alert>
         </main>
