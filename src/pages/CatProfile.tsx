@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { CameraCapture } from "@/components/scanner/CameraCapture";
 import { ProfilePicture } from "@/components/cat/ProfilePicture";
 import { useProfilePicture } from "@/components/cat/useProfilePicture";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const CatProfile = () => {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ const CatProfile = () => {
         .select('*')
         .eq('user_id', session.user.id)
         .ilike('name', name || '')
-        .single();
+        .maybeSingle();  // Changed from .single() to .maybeSingle()
 
       if (error) throw error;
       return data;
@@ -76,7 +77,11 @@ const CatProfile = () => {
             </Button>
             <h1 className="text-2xl font-bold">Cat Not Found</h1>
           </div>
-          <p>This cat profile doesn't exist or you don't have access to it.</p>
+          <Alert>
+            <AlertDescription>
+              This cat profile doesn't exist or you don't have access to it.
+            </AlertDescription>
+          </Alert>
         </main>
       </div>
     );
