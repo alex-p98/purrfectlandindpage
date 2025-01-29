@@ -28,12 +28,14 @@ const formSchema = z.object({
   notes: z.string().optional(),
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
 const AddCat = () => {
   const navigate = useNavigate();
   const { session } = useAuth();
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
@@ -46,11 +48,26 @@ const AddCat = () => {
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: FormValues) => {
+    if (!session?.user.id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to create a cat profile.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase.from("cats").insert({
-        ...values,
-        user_id: session?.user.id,
+        name: values.name,
+        breed: values.breed,
+        age: values.age,
+        weight: values.weight || null,
+        allergies: values.allergies || null,
+        health_condition: values.health_condition || null,
+        notes: values.notes || null,
+        user_id: session.user.id,
       });
 
       if (error) throw error;
