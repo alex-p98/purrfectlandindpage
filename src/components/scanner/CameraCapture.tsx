@@ -7,16 +7,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CameraCaptureProps {
   open: boolean;
   onClose: () => void;
-  onCapture: (imageData: string) => void;
+  onCapture: (imageUrl: string) => void;
 }
 
 export const CameraCapture = ({ open, onClose, onCapture }: CameraCaptureProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
   const startCamera = async () => {
@@ -50,6 +52,40 @@ export const CameraCapture = ({ open, onClose, onCapture }: CameraCaptureProps) 
     onClose();
   };
 
+  const uploadImage = async (blob: Blob) => {
+    try {
+      setIsUploading(true);
+      const fileExt = 'jpg';
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('cat-pictures')
+        .upload(filePath, blob, {
+          contentType: 'image/jpeg',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('cat-pictures')
+        .getPublicUrl(filePath);
+
+      onCapture(publicUrl);
+      handleClose();
+    } catch (error: any) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "Upload Error",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const capturePhoto = () => {
     if (videoRef.current) {
       const canvas = document.createElement('canvas');
@@ -58,11 +94,13 @@ export const CameraCapture = ({ open, onClose, onCapture }: CameraCaptureProps) 
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.drawImage(videoRef.current, 0, 0);
-        const imageData = canvas.toDataURL('image/jpeg');
-        onCapture(imageData);
+        canvas.toBlob((blob) => {
+          if (blob) {
+            uploadImage(blob);
+          }
+        }, 'image/jpeg', 0.8);
       }
     }
-    handleClose();
   };
 
   // Start camera when dialog opens
@@ -89,6 +127,7 @@ export const CameraCapture = ({ open, onClose, onCapture }: CameraCaptureProps) 
             size="lg" 
             className="rounded-full w-16 h-16 p-0"
             onClick={capturePhoto}
+            disabled={isUploading}
           >
             <div className="rounded-full w-12 h-12 border-4 border-background" />
           </Button>
