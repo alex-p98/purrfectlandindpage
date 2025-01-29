@@ -4,6 +4,10 @@ import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 interface CatInfo {
   name: string;
@@ -11,8 +15,8 @@ interface CatInfo {
   age: string;
   breed: string;
   allergies: string;
-  healthCondition: string;
-  image: string;
+  health_condition: string;
+  image_url: string;
 }
 
 interface DietSection {
@@ -21,9 +25,24 @@ interface DietSection {
 }
 
 const CustomDiet = () => {
+  const { session } = useAuth();
   const [selectedCat, setSelectedCat] = useState<CatInfo | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [dietSections, setDietSections] = useState<DietSection[]>([]);
+
+  const { data: cats, isLoading } = useQuery({
+    queryKey: ['cats', session?.user.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('cats')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as CatInfo[];
+    },
+    enabled: !!session?.user.id,
+  });
 
   const parseMarkdownResponse = (markdown: string) => {
     const sections: DietSection[] = [];
@@ -61,6 +80,24 @@ const CustomDiet = () => {
     return sections;
   };
 
+  const formatWeight = (weight: string | null) => {
+    if (!weight) return 'Not specified';
+    
+    const isKilos = weight.toLowerCase().includes('kg') || 
+                   weight.toLowerCase().includes('kilo');
+    
+    const numericWeight = parseFloat(weight.replace(/[^\d.]/g, ''));
+    
+    if (isNaN(numericWeight)) return weight;
+    
+    if (isKilos) {
+      const pounds = (numericWeight * 2.20462).toFixed(1);
+      return `${pounds} lbs`;
+    }
+    
+    return `${numericWeight} lbs`;
+  };
+
   const handleGenerateDiet = async () => {
     if (!selectedCat) {
       toast.error("Please select a cat first");
@@ -79,10 +116,10 @@ const CustomDiet = () => {
         body: JSON.stringify({
           name: selectedCat.name,
           breed: selectedCat.breed,
-          weight: selectedCat.weight,
+          weight: formatWeight(selectedCat.weight),
           age: selectedCat.age,
           allergies: selectedCat.allergies,
-          healthCondition: selectedCat.healthCondition
+          healthCondition: selectedCat.health_condition
         })
       });
 
@@ -102,6 +139,14 @@ const CustomDiet = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background pt-16 pb-20">
       <main className="container max-w-md mx-auto p-6 space-y-8">
@@ -112,28 +157,35 @@ const CustomDiet = () => {
             <div>
               <h2 className="text-xl font-semibold mb-4 text-primary/80">Select Your Cat</h2>
               
-              <Card className="p-4 w-[140px] flex flex-col items-center gap-2 cursor-pointer hover:bg-accent/50 transition-colors border-primary/20"
-                    onClick={() => setSelectedCat({
-                      name: "Whiskers",
-                      breed: "Tuxedo",
-                      weight: "4.5 kg",
-                      age: "3 years",
-                      allergies: "Fish, Dairy",
-                      healthCondition: "Generally healthy, regular checkups required",
-                      image: "/lovable-uploads/ae15ab81-e4b2-4296-8454-d8ee35d09389.png"
-                    })}>
-                <Avatar className="w-20 h-20">
-                  <AvatarImage 
-                    src="/lovable-uploads/ae15ab81-e4b2-4296-8454-d8ee35d09389.png"
-                    alt="Whiskers"
-                    className="object-cover"
-                  />
-                  <AvatarFallback>W</AvatarFallback>
-                </Avatar>
-                <span className="text-sm font-medium">Whiskers</span>
-              </Card>
+              <div className="grid grid-cols-2 gap-4">
+                {cats?.map((cat) => (
+                  <Card 
+                    key={cat.name}
+                    className={`p-4 flex flex-col items-center gap-2 cursor-pointer hover:bg-accent/50 transition-colors border-primary/20 ${
+                      selectedCat?.name === cat.name ? 'bg-accent' : ''
+                    }`}
+                    onClick={() => setSelectedCat(cat)}
+                  >
+                    <Avatar className="w-20 h-20">
+                      <AvatarImage 
+                        src={cat.image_url || "/placeholder.svg"}
+                        alt={cat.name}
+                        className="object-cover"
+                      />
+                      <AvatarFallback>{cat.name[0]}</AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-medium">{cat.name}</span>
+                  </Card>
+                ))}
+              </div>
 
-              {!selectedCat && (
+              {!cats?.length && (
+                <p className="text-muted-foreground text-sm mt-4">
+                  No cats found. Add a cat first to generate a custom diet plan.
+                </p>
+              )}
+
+              {!selectedCat && cats?.length > 0 && (
                 <p className="text-muted-foreground text-sm mt-4">
                   Select a cat to view their information and generate a custom diet
                 </p>
@@ -152,7 +204,7 @@ const CustomDiet = () => {
 
                   <div>
                     <h4 className="text-lg text-primary/80">Weight</h4>
-                    <p className="text-xl">{selectedCat.weight}</p>
+                    <p className="text-xl">{formatWeight(selectedCat.weight)}</p>
                   </div>
 
                   <div>
@@ -162,12 +214,12 @@ const CustomDiet = () => {
 
                   <div>
                     <h4 className="text-lg text-primary/80">Allergies</h4>
-                    <p className="text-xl">{selectedCat.allergies}</p>
+                    <p className="text-xl">{selectedCat.allergies || 'None'}</p>
                   </div>
 
                   <div>
                     <h4 className="text-lg text-primary/80">Health</h4>
-                    <p className="text-xl">{selectedCat.healthCondition}</p>
+                    <p className="text-xl">{selectedCat.health_condition || 'Generally healthy'}</p>
                   </div>
                 </div>
 
