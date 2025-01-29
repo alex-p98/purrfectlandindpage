@@ -3,22 +3,56 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Edit, Heart, Weight, Stethoscope, AlertCircle } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const CatProfile = () => {
   const navigate = useNavigate();
   const { name } = useParams();
+  const { session } = useAuth();
 
-  // TODO: Fetch cat data from database
-  const catData = {
-    name: name,
-    breed: "Tuxedo",
-    age: "2 years",
-    weight: "4.5 kg",
-    allergies: "Fish, Dairy",
-    healthCondition: "Generally healthy, regular checkups required",
-    notes: "Loves to sleep and play with yarn",
-    image: "/lovable-uploads/ae15ab81-e4b2-4296-8454-d8ee35d09389.png"
-  };
+  const { data: catData, isLoading } = useQuery({
+    queryKey: ['cat', name],
+    queryFn: async () => {
+      if (!session?.user.id) return null;
+      
+      const { data, error } = await supabase
+        .from('cats')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .ilike('name', name || '')
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!session?.user.id && !!name,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!catData) {
+    return (
+      <div className="min-h-screen bg-background">
+        <main className="container max-w-2xl mx-auto pt-8 p-4 space-y-8">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-2xl font-bold">Cat Not Found</h1>
+          </div>
+          <p>This cat profile doesn't exist or you don't have access to it.</p>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -37,9 +71,13 @@ const CatProfile = () => {
 
         <div className="flex flex-col items-center gap-6">
           <Avatar className="w-48 h-48 rounded-full border-4 border-primary">
-            <AvatarImage src={catData.image} alt={catData.name} className="object-cover" />
+            <AvatarImage 
+              src={catData.image_url || "/placeholder.svg"} 
+              alt={catData.name} 
+              className="object-cover" 
+            />
             <AvatarFallback className="text-4xl">
-              {catData.name?.[0].toUpperCase()}
+              {catData.name[0].toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div className="text-center">
@@ -54,7 +92,7 @@ const CatProfile = () => {
               <Weight className="h-8 w-8 text-primary" />
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">Weight</h3>
-                <p className="text-lg font-semibold">{catData.weight}</p>
+                <p className="text-lg font-semibold">{catData.weight || 'Not specified'}</p>
               </div>
             </CardContent>
           </Card>
@@ -64,7 +102,7 @@ const CatProfile = () => {
               <AlertCircle className="h-8 w-8 text-destructive" />
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">Allergies</h3>
-                <p className="text-lg font-semibold">{catData.allergies}</p>
+                <p className="text-lg font-semibold">{catData.allergies || 'None'}</p>
               </div>
             </CardContent>
           </Card>
@@ -74,7 +112,7 @@ const CatProfile = () => {
               <Stethoscope className="h-8 w-8 text-secondary" />
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">Health Condition</h3>
-                <p className="text-lg">{catData.healthCondition}</p>
+                <p className="text-lg">{catData.health_condition || 'No health conditions reported'}</p>
               </div>
             </CardContent>
           </Card>
@@ -86,7 +124,7 @@ const CatProfile = () => {
               <Heart className="h-5 w-5 text-primary" />
               <h3 className="font-medium">Notes</h3>
             </div>
-            <p className="text-muted-foreground">{catData.notes}</p>
+            <p className="text-muted-foreground">{catData.notes || 'No notes added'}</p>
           </CardContent>
         </Card>
       </main>
