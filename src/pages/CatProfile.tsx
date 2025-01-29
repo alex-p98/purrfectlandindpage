@@ -9,11 +9,14 @@ import { CameraCapture } from "@/components/scanner/CameraCapture";
 import { ProfilePicture } from "@/components/cat/ProfilePicture";
 import { useProfilePicture } from "@/components/cat/useProfilePicture";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { EditCatForm } from "@/components/cat/EditCatForm";
+import { useState } from "react";
 
 const CatProfile = () => {
   const navigate = useNavigate();
   const { name } = useParams();
   const { session } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
 
   const { data: catData, isLoading } = useQuery({
     queryKey: ['cat', name],
@@ -84,6 +87,28 @@ const CatProfile = () => {
     );
   }
 
+  const canEdit = session?.user.id === catData.user_id;
+
+  if (isEditing && canEdit) {
+    return (
+      <div className="min-h-screen bg-background">
+        <main className="container max-w-2xl mx-auto pt-8 p-4 space-y-8">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => setIsEditing(false)}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-2xl font-bold">Edit Cat Profile</h1>
+          </div>
+          <EditCatForm 
+            cat={catData} 
+            onSuccess={() => setIsEditing(false)} 
+            onCancel={() => setIsEditing(false)} 
+          />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <input
@@ -101,9 +126,15 @@ const CatProfile = () => {
             </Button>
             <h1 className="text-2xl font-bold">Cat Profile</h1>
           </div>
-          <Button variant="outline" size="icon">
-            <Edit className="h-4 w-4" />
-          </Button>
+          {canEdit && (
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => setIsEditing(true)}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         <div className="flex flex-col items-center gap-6">
