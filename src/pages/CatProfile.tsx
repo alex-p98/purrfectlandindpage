@@ -30,6 +30,28 @@ const CatProfile = () => {
     enabled: !!session?.user.id && !!name,
   });
 
+  const formatWeight = (weight: string | null) => {
+    if (!weight) return 'Not specified';
+    
+    // Check if weight contains 'kg' or 'kilos'
+    const isKilos = weight.toLowerCase().includes('kg') || 
+                   weight.toLowerCase().includes('kilo');
+    
+    // Extract the numeric value
+    const numericWeight = parseFloat(weight.replace(/[^\d.]/g, ''));
+    
+    if (isNaN(numericWeight)) return weight;
+    
+    if (isKilos) {
+      // Convert kilos to pounds (1 kg = 2.20462 pounds)
+      const pounds = (numericWeight * 2.20462).toFixed(1);
+      return `${pounds} lbs`;
+    }
+    
+    // If weight is already in pounds or unspecified unit, assume pounds
+    return `${numericWeight} lbs`;
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -92,7 +114,7 @@ const CatProfile = () => {
               <Weight className="h-8 w-8 text-primary" />
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">Weight</h3>
-                <p className="text-lg font-semibold">{catData.weight || 'Not specified'}</p>
+                <p className="text-lg font-semibold">{formatWeight(catData.weight)}</p>
               </div>
             </CardContent>
           </Card>
