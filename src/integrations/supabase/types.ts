@@ -15,6 +15,7 @@ export type Database = {
           allergies: string | null
           breed: string
           created_at: string
+          diet_plan: Json | null
           health_condition: string | null
           id: string
           image_url: string | null
@@ -29,6 +30,7 @@ export type Database = {
           allergies?: string | null
           breed: string
           created_at?: string
+          diet_plan?: Json | null
           health_condition?: string | null
           id?: string
           image_url?: string | null
@@ -43,6 +45,7 @@ export type Database = {
           allergies?: string | null
           breed?: string
           created_at?: string
+          diet_plan?: Json | null
           health_condition?: string | null
           id?: string
           image_url?: string | null

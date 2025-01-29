@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 
 interface CatInfo {
+  id: string;
   name: string;
   weight: string;
   age: string;
@@ -17,6 +18,7 @@ interface CatInfo {
   allergies: string;
   health_condition: string;
   image_url: string;
+  diet_plan?: DietSection[];
 }
 
 interface DietSection {
@@ -29,6 +31,7 @@ const CustomDiet = () => {
   const [selectedCat, setSelectedCat] = useState<CatInfo | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [dietSections, setDietSections] = useState<DietSection[]>([]);
+  const queryClient = useQueryClient();
 
   const { data: cats, isLoading } = useQuery({
     queryKey: ['cats', session?.user.id],
@@ -42,6 +45,25 @@ const CustomDiet = () => {
       return data as CatInfo[];
     },
     enabled: !!session?.user.id,
+  });
+
+  const saveDietPlanMutation = useMutation({
+    mutationFn: async ({ catId, dietPlan }: { catId: string; dietPlan: DietSection[] }) => {
+      const { error } = await supabase
+        .from('cats')
+        .update({ diet_plan: dietPlan })
+        .eq('id', catId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cats'] });
+      toast.success('Diet plan saved successfully!');
+    },
+    onError: (error) => {
+      console.error('Error saving diet plan:', error);
+      toast.error('Failed to save diet plan. Please try again.');
+    },
   });
 
   const parseMarkdownResponse = (markdown: string) => {
@@ -130,7 +152,13 @@ const CustomDiet = () => {
       const responseText = await response.text();
       const parsedSections = parseMarkdownResponse(responseText);
       setDietSections(parsedSections);
-      toast.success("Custom diet plan generated successfully!");
+      
+      // Save the generated diet plan
+      await saveDietPlanMutation.mutateAsync({
+        catId: selectedCat.id,
+        dietPlan: parsedSections
+      });
+
     } catch (error) {
       console.error('Error generating diet:', error);
       toast.error("Failed to generate diet. Please try again later.");
@@ -164,7 +192,14 @@ const CustomDiet = () => {
                     className={`p-4 flex flex-col items-center gap-2 cursor-pointer hover:bg-accent/50 transition-colors border-primary/20 ${
                       selectedCat?.name === cat.name ? 'bg-accent' : ''
                     }`}
-                    onClick={() => setSelectedCat(cat)}
+                    onClick={() => {
+                      setSelectedCat(cat);
+                      if (cat.diet_plan) {
+                        setDietSections(cat.diet_plan);
+                      } else {
+                        setDietSections([]);
+                      }
+                    }}
                   >
                     <Avatar className="w-20 h-20">
                       <AvatarImage 
