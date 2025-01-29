@@ -41,7 +41,12 @@ const Index = () => {
             ) : cats && cats.length > 0 ? (
               <>
                 {cats.map((cat) => (
-                  <CatProfile key={cat.id} name={cat.name} imageUrl={cat.image_url} />
+                  <CatProfile 
+                    key={cat.id} 
+                    id={cat.id} 
+                    name={cat.name} 
+                    imageUrl={cat.image_url} 
+                  />
                 ))}
                 <CatProfile />
               </>
