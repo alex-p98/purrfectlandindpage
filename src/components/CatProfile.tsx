@@ -47,11 +47,38 @@ export const CatProfile = ({ name, imageUrl, id }: CatProfileProps) => {
     }
   };
 
+  const handleAddCat = async () => {
+    try {
+      const { error } = await supabase
+        .from('cats')
+        .insert([{ name: 'temp', breed: 'temp', age: 'temp' }]);
+
+      if (error?.message.includes('policy')) {
+        toast({
+          title: "Limit Reached",
+          description: "Free users can only create one cat profile. Please delete your existing profile to create a new one.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // If we get here, the insert was successful (though it will be rolled back)
+      // so we can navigate to the add cat page
+      navigate("/add-cat");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to check cat profile limit",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!name) {
     return (
       <Card
         className="p-6 flex flex-col items-center justify-center gap-3 min-h-[200px] cursor-pointer scale-animation"
-        onClick={() => navigate("/add-cat")}
+        onClick={handleAddCat}
       >
         <PlusCircle className="h-12 w-12 text-primary" />
         <p className="text-sm text-muted-foreground">Add a Cat</p>
