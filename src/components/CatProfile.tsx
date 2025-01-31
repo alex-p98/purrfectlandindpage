@@ -6,6 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface CatProfileProps {
   name?: string;
@@ -17,6 +18,7 @@ export const CatProfile = ({ name, imageUrl, id }: CatProfileProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -48,10 +50,24 @@ export const CatProfile = ({ name, imageUrl, id }: CatProfileProps) => {
   };
 
   const handleAddCat = async () => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to create a cat profile",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('cats')
-        .insert([{ name: 'temp', breed: 'temp', age: 'temp' }]);
+        .insert({
+          name: 'temp',
+          breed: 'temp',
+          age: 'temp',
+          user_id: user.id
+        });
 
       if (error?.message.includes('policy')) {
         toast({
