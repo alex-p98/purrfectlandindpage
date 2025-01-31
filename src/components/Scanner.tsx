@@ -63,7 +63,8 @@ export const Scanner = () => {
 
     setIsScanning(true);
     try {
-      // Fixed the function invocation to use the correct format
+      console.log('Sending image data, length:', capturedImage.length);
+      
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-ingredients', {
         body: { image: capturedImage },
         headers: {
@@ -71,11 +72,16 @@ export const Scanner = () => {
         },
       });
 
-      if (analysisError) throw analysisError;
+      if (analysisError) {
+        console.error('Analysis error:', analysisError);
+        throw analysisError;
+      }
 
       if (!analysisData) {
         throw new Error('No analysis data received');
       }
+
+      console.log('Analysis response:', analysisData);
 
       setHealthScore({
         score: analysisData.score,

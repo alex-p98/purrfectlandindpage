@@ -13,7 +13,36 @@ serve(async (req) => {
   }
 
   try {
-    const { image } = await req.json()
+    // Log the request details for debugging
+    console.log('Request received:', {
+      method: req.method,
+      headers: Object.fromEntries(req.headers.entries()),
+    });
+
+    // Get the request body as text first
+    const bodyText = await req.text();
+    console.log('Raw request body:', bodyText);
+
+    // Validate that we have a body
+    if (!bodyText) {
+      throw new Error('Request body is empty');
+    }
+
+    // Parse the JSON body
+    let body;
+    try {
+      body = JSON.parse(bodyText);
+    } catch (e) {
+      console.error('JSON parse error:', e);
+      throw new Error(`Invalid JSON in request body: ${e.message}`);
+    }
+
+    // Validate the image data
+    if (!body.image) {
+      throw new Error('No image data provided');
+    }
+
+    console.log('Image data length:', body.image.length);
 
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -48,7 +77,7 @@ serve(async (req) => {
               {
                 type: 'image_url',
                 image_url: {
-                  url: image
+                  url: body.image
                 }
               }
             ]
@@ -70,8 +99,13 @@ serve(async (req) => {
     // Parse the response to extract score (should be just a number 1-5)
     const score = parseInt(content.trim())
     
+    // Validate the score
+    if (isNaN(score) || score < 1 || score > 5) {
+      throw new Error('Invalid score received from analysis');
+    }
+    
     // Provide a generic explanation based on the score
-    const explanations = {
+    const explanations: Record<number, string> = {
       1: "Poor nutritional quality with concerning ingredients.",
       2: "Below average quality with some nutritional concerns.",
       3: "Average quality with balanced nutrition.",
@@ -89,9 +123,12 @@ serve(async (req) => {
       },
     )
   } catch (error) {
-    console.error('Error in analyze-ingredients function:', error)
+    console.error('Error in analyze-ingredients function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: error.stack
+      }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
