@@ -47,13 +47,6 @@ export const Scanner = () => {
           description: "Your image has been successfully uploaded",
         });
       };
-      reader.onerror = () => {
-        toast({
-          title: "Upload failed",
-          description: "Failed to read the image file",
-          variant: "destructive",
-        });
-      };
       reader.readAsDataURL(file);
     }
   };
@@ -63,13 +56,8 @@ export const Scanner = () => {
 
     setIsScanning(true);
     try {
-      console.log('Sending image data, length:', capturedImage.length);
-      
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-ingredients', {
         body: { image: capturedImage },
-        headers: {
-          'Content-Type': 'application/json',
-        },
       });
 
       if (analysisError) {
@@ -80,8 +68,6 @@ export const Scanner = () => {
       if (!analysisData) {
         throw new Error('No analysis data received');
       }
-
-      console.log('Analysis response:', analysisData);
 
       setHealthScore({
         score: analysisData.score,

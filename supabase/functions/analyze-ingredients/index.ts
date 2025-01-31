@@ -13,36 +13,12 @@ serve(async (req) => {
   }
 
   try {
-    // Log the request details for debugging
-    console.log('Request received:', {
-      method: req.method,
-      headers: Object.fromEntries(req.headers.entries()),
-    });
-
-    // Get the request body as text first
-    const bodyText = await req.text();
-    console.log('Raw request body:', bodyText);
-
-    // Validate that we have a body
-    if (!bodyText) {
-      throw new Error('Request body is empty');
+    // Get and validate request body
+    const body = await req.json()
+    
+    if (!body?.image) {
+      throw new Error('No image data provided')
     }
-
-    // Parse the JSON body
-    let body;
-    try {
-      body = JSON.parse(bodyText);
-    } catch (e) {
-      console.error('JSON parse error:', e);
-      throw new Error(`Invalid JSON in request body: ${e.message}`);
-    }
-
-    // Validate the image data
-    if (!body.image) {
-      throw new Error('No image data provided');
-    }
-
-    console.log('Image data length:', body.image.length);
 
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -56,23 +32,22 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are an advanced cat nutrition analysis system. The user will provide a list of cat food ingredients extracted from a picture. Your task is to:
-1. Refer to the most up-to-date, professionally recognized guidelines for feline nutrition (as employed by certified cat nutritionists and veterinarians).
-2. Evaluate the potential health implications of these ingredients for an average adult cat, considering:
-  • Nutritional completeness and balance
-  • Ingredient quality
-  • Presence of common toxins or harmful substances
-  • Artificial additives or fillers
-  • Allergens and other risk factors
-3. Assign a single integer rating from 1 to 5 based on the overall health risk (1 = poor quality/higher risk, 5 = excellent quality/lower risk).
-4. Output only the integer rating as your final answer, with no additional commentary or explanation.`
+            content: `You are an advanced cat nutrition analysis system. Analyze the ingredients list from the image and:
+1. Check for harmful ingredients or red flags
+2. Evaluate nutritional completeness
+3. Consider common allergens
+4. Look for artificial additives
+5. Assess protein quality and sources
+Then provide:
+1. A score from 1-5 (1=poor, 5=excellent)
+2. A brief explanation of the rating`
           },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: "Please analyze these cat food ingredients and provide a rating from 1-5."
+                text: "Please analyze these cat food ingredients and provide a rating from 1-5 with a brief explanation."
               },
               {
                 type: 'image_url',
@@ -83,47 +58,40 @@ serve(async (req) => {
             ]
           }
         ],
-        max_tokens: 10
+        max_tokens: 500
       }),
     })
 
     const data = await response.json()
-    console.log('OpenAI API Response:', data);
+    console.log('OpenAI API Response:', data)
     
     if (!response.ok) {
       throw new Error(data.error?.message || 'Failed to analyze ingredients')
     }
 
+    // Extract score and explanation from the response
     const content = data.choices[0].message.content
+    const scoreMatch = content.match(/(\d+)/)
+    const score = scoreMatch ? parseInt(scoreMatch[0]) : null
     
-    // Parse the response to extract score (should be just a number 1-5)
-    const score = parseInt(content.trim())
-    
-    // Validate the score
-    if (isNaN(score) || score < 1 || score > 5) {
-      throw new Error('Invalid score received from analysis');
+    if (!score || score < 1 || score > 5) {
+      throw new Error('Invalid score received from analysis')
     }
-    
-    // Provide a generic explanation based on the score
-    const explanations: Record<number, string> = {
-      1: "Poor nutritional quality with concerning ingredients.",
-      2: "Below average quality with some nutritional concerns.",
-      3: "Average quality with balanced nutrition.",
-      4: "Above average quality with good nutritional value.",
-      5: "Excellent quality with optimal nutritional content."
-    }
+
+    // Extract explanation (everything after the score)
+    const explanation = content.replace(/^[^a-zA-Z]+/, '').trim()
 
     return new Response(
       JSON.stringify({
         score,
-        explanation: explanations[score] || "Unable to determine nutritional quality."
+        explanation
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
     )
   } catch (error) {
-    console.error('Error in analyze-ingredients function:', error);
+    console.error('Error in analyze-ingredients function:', error)
     return new Response(
       JSON.stringify({ 
         error: error.message,
