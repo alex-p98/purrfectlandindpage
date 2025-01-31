@@ -14,6 +14,8 @@ serve(async (req) => {
 
   try {
     const { image } = await req.json()
+    
+    console.log('Calling OpenAI API with image...');
 
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -23,7 +25,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4-vision-preview',
         messages: [
           {
             role: 'system',
@@ -65,10 +67,13 @@ serve(async (req) => {
       throw new Error(data.error?.message || 'Failed to analyze ingredients')
     }
 
-    const content = data.choices[0].message.content
+    // Extract the score from the response
+    const content = data.choices[0].message.content.trim()
+    const score = parseInt(content)
     
-    // Parse the response to extract score (should be just a number 1-5)
-    const score = parseInt(content.trim())
+    if (isNaN(score) || score < 1 || score > 5) {
+      throw new Error('Invalid score received from OpenAI')
+    }
     
     // Provide a generic explanation based on the score
     const explanations = {
