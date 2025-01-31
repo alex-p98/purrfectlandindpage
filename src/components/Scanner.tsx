@@ -63,12 +63,18 @@ export const Scanner = () => {
 
     setIsScanning(true);
     try {
+      // Fixed the function invocation to use the correct format
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-ingredients', {
         body: { image: capturedImage },
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
-      if (analysisError) {
-        throw new Error('Failed to analyze ingredients');
+      if (analysisError) throw analysisError;
+
+      if (!analysisData) {
+        throw new Error('No analysis data received');
       }
 
       setHealthScore({
