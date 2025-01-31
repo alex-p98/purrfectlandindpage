@@ -13,16 +13,21 @@ serve(async (req) => {
   }
 
   try {
-    // Validate request body
+    // Log the raw request for debugging
+    const rawBody = await req.text();
+    console.log('Raw request body:', rawBody);
+
+    // Parse JSON after logging
     let body;
     try {
-      body = await req.json();
+      body = JSON.parse(rawBody);
     } catch (error) {
       console.error('Error parsing request body:', error);
       return new Response(
         JSON.stringify({ 
           error: 'Invalid request body',
-          details: error.message 
+          details: error.message,
+          receivedBody: rawBody
         }),
         { 
           status: 400,
@@ -35,7 +40,10 @@ serve(async (req) => {
     const { image } = body;
     if (!image) {
       return new Response(
-        JSON.stringify({ error: 'No image provided' }),
+        JSON.stringify({ 
+          error: 'No image provided',
+          receivedBody: body 
+        }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -43,7 +51,8 @@ serve(async (req) => {
       );
     }
 
-    console.log('Received image data, calling OpenAI API...');
+    console.log('Image data received, length:', image.length);
+    console.log('Calling OpenAI API...');
 
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -113,7 +122,7 @@ Provide ONLY the numerical score (1-5) as your response.`
       3: "Average quality with balanced nutrition.",
       4: "Above average quality with good nutritional value.",
       5: "Excellent quality with optimal nutritional content."
-    };
+    } as const;
 
     const response = {
       score,
