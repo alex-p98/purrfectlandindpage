@@ -1,4 +1,5 @@
-project_id = "uwjfpheikejfxdnsolli"
+[functions.create-checkout]
+verify_jwt = true
 
-[functions.analyze-ingredients]
-verify_jwt = false
+[functions.check-subscription]
+verify_jwt = true
