@@ -7,8 +7,6 @@ import { ImagePreview } from "./scanner/ImagePreview";
 import { PawRating } from "./scanner/PawRating";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/AuthContext";
 
 export const Scanner = () => {
   const [showCamera, setShowCamera] = useState(false);
@@ -16,73 +14,6 @@ export const Scanner = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [healthScore, setHealthScore] = useState<{ score: number; explanation: string } | null>(null);
   const { toast } = useToast();
-  const { session } = useAuth();
-
-  // Query to get user's scan usage
-  const { data: usage, refetch: refetchUsage } = useQuery({
-    queryKey: ['user-usage'],
-    queryFn: async () => {
-      if (!session?.user.id) return null;
-      
-      // First try to get existing record
-      const { data: existingData, error: fetchError } = await supabase
-        .from('user_usage')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
-      
-      if (fetchError) throw fetchError;
-      
-      // If no record exists, create one
-      if (!existingData) {
-        const { data: newData, error: insertError } = await supabase
-          .from('user_usage')
-          .insert({
-            user_id: session.user.id,
-            scans_this_month: 0,
-            last_scan_reset: new Date().toISOString()
-          })
-          .select()
-          .single();
-        
-        if (insertError) throw insertError;
-        return newData;
-      }
-      
-      return existingData;
-    },
-    enabled: !!session?.user.id
-  });
-
-  // Query to get user's subscription tier
-  const { data: subscription } = useQuery({
-    queryKey: ['subscription'],
-    queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('check-subscription');
-      if (error) throw error;
-      return data.tier;
-    },
-    enabled: !!session?.user.id
-  });
-
-  const getScansLimit = () => {
-    switch (subscription) {
-      case 'basic':
-        return 2;
-      case 'pro':
-        return 10;
-      case 'unlimited':
-        return Infinity;
-      default:
-        return 2; // Free tier
-    }
-  };
-
-  const getRemainingScans = () => {
-    const limit = getScansLimit();
-    const used = usage?.scans_this_month || 0;
-    return limit === Infinity ? '∞' : Math.max(0, limit - used);
-  };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -128,24 +59,11 @@ export const Scanner = () => {
   };
 
   const handleScanIngredients = async () => {
-    if (!capturedImage || !session) return;
-
-    const scansLimit = getScansLimit();
-    const scansUsed = usage?.scans_this_month || 0;
-
-    if (scansUsed >= scansLimit && scansLimit !== Infinity) {
-      toast({
-        title: "Scan limit reached",
-        description: "Please upgrade your subscription to continue scanning ingredients.",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!capturedImage) return;
 
     setIsScanning(true);
     try {
-      console.log('Sending image data, length:', capturedImage.length);
-      
+      // Fixed the function invocation to use the correct format
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-ingredients', {
         body: { image: capturedImage },
         headers: {
@@ -158,20 +76,6 @@ export const Scanner = () => {
       if (!analysisData) {
         throw new Error('No analysis data received');
       }
-
-      // Update scan count
-      const { error: updateError } = await supabase
-        .from('user_usage')
-        .upsert({
-          user_id: session.user.id,
-          scans_this_month: (usage?.scans_this_month || 0) + 1,
-          last_scan_reset: usage?.last_scan_reset || new Date().toISOString(),
-        });
-
-      if (updateError) throw updateError;
-      
-      // Refetch usage data to update the UI
-      await refetchUsage();
 
       setHealthScore({
         score: analysisData.score,
@@ -199,17 +103,10 @@ export const Scanner = () => {
       <Card className="p-8 flex flex-col items-center gap-6 relative overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-2 wave-pattern" />
         
-        <div className="space-y-2 text-center">
-          <h2 className="text-2xl font-semibold">Scan Ingredients</h2>
-          <p className="text-sm text-muted-foreground max-w-[280px]">
-            Take a photo or upload an image of your cat food ingredients
-          </p>
-          {session && (
-            <p className="text-sm font-medium">
-              Remaining scans this month: <span className="text-primary">{getRemainingScans()}</span>
-            </p>
-          )}
-        </div>
+        <h2 className="text-2xl font-semibold">Scan Ingredients</h2>
+        <p className="text-sm text-muted-foreground text-center max-w-[280px]">
+          Take a photo or upload an image of your cat food ingredients
+        </p>
         
         {!capturedImage ? (
           <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xs">

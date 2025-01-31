@@ -1,5 +1,5 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts"
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import "https://deno.land/x/xhr@0.1.0/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,61 +7,16 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    // Log request details for debugging
-    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
-    console.log('Request method:', req.method);
+    const { image } = await req.json()
 
-    // Get the raw body and log it
-    const rawBody = await req.text();
-    console.log('Raw request body length:', rawBody.length);
-    console.log('Raw request body preview:', rawBody.substring(0, 100));
-
-    // Parse JSON body
-    let body;
-    try {
-      body = JSON.parse(rawBody);
-    } catch (error) {
-      console.error('Error parsing request body:', error);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Invalid JSON in request body',
-          details: error.message,
-          bodyLength: rawBody.length,
-          bodyPreview: rawBody.substring(0, 100)
-        }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    // Validate image data
-    const { image } = body;
-    if (!image) {
-      console.error('No image data in request body:', body);
-      return new Response(
-        JSON.stringify({ 
-          error: 'No image data provided',
-          receivedBody: body 
-        }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    console.log('Image data received, length:', image.length);
-    console.log('Calling OpenAI API...');
-
-    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Call OpenAI API
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
@@ -72,20 +27,23 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are an advanced cat nutrition analysis system. Analyze the ingredients list in the image and:
-1. Check for quality of ingredients (meat content, fillers, artificial additives)
-2. Look for potential allergens or harmful ingredients
-3. Assess overall nutritional balance
-4. Consider preservatives and additives
-5. Rate on a scale of 1-5 (1=poor, 5=excellent)
-Provide ONLY a numerical score (1-5) as your response.`
+            content: `You are an advanced cat nutrition analysis system. The user will provide a list of cat food ingredients extracted from a picture. Your task is to:
+1. Refer to the most up-to-date, professionally recognized guidelines for feline nutrition (as employed by certified cat nutritionists and veterinarians).
+2. Evaluate the potential health implications of these ingredients for an average adult cat, considering:
+  • Nutritional completeness and balance
+  • Ingredient quality
+  • Presence of common toxins or harmful substances
+  • Artificial additives or fillers
+  • Allergens and other risk factors
+3. Assign a single integer rating from 1 to 5 based on the overall health risk (1 = poor quality/higher risk, 5 = excellent quality/lower risk).
+4. Output only the integer rating as your final answer, with no additional commentary or explanation.`
           },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: "Analyze these cat food ingredients and provide a rating from 1-5."
+                text: "Please analyze these cat food ingredients and provide a rating from 1-5."
               },
               {
                 type: 'image_url',
@@ -98,63 +56,46 @@ Provide ONLY a numerical score (1-5) as your response.`
         ],
         max_tokens: 10
       }),
-    });
+    })
 
-    if (!openAIResponse.ok) {
-      const errorData = await openAIResponse.text();
-      console.error('OpenAI API Error:', errorData);
-      throw new Error(`OpenAI API error: ${errorData}`);
+    const data = await response.json()
+    console.log('OpenAI API Response:', data);
+    
+    if (!response.ok) {
+      throw new Error(data.error?.message || 'Failed to analyze ingredients')
     }
 
-    const openAIData = await openAIResponse.json();
-    console.log('OpenAI API Response:', JSON.stringify(openAIData));
+    const content = data.choices[0].message.content
     
-    if (!openAIData.choices?.[0]?.message?.content) {
-      throw new Error('Invalid response format from OpenAI');
-    }
-
-    // Extract and validate the score
-    const content = openAIData.choices[0].message.content.trim();
-    const score = parseInt(content);
+    // Parse the response to extract score (should be just a number 1-5)
+    const score = parseInt(content.trim())
     
-    if (isNaN(score) || score < 1 || score > 5) {
-      console.error('Invalid score received:', content);
-      throw new Error('Invalid score received from OpenAI');
-    }
-    
-    // Provide explanations based on the score
+    // Provide a generic explanation based on the score
     const explanations = {
       1: "Poor nutritional quality with concerning ingredients.",
       2: "Below average quality with some nutritional concerns.",
       3: "Average quality with balanced nutrition.",
       4: "Above average quality with good nutritional value.",
       5: "Excellent quality with optimal nutritional content."
-    } as const;
-
-    const response = {
-      score,
-      explanation: explanations[score as keyof typeof explanations] || "Unable to determine nutritional quality."
-    };
-
-    console.log('Sending response:', JSON.stringify(response));
+    }
 
     return new Response(
-      JSON.stringify(response),
+      JSON.stringify({
+        score,
+        explanation: explanations[score] || "Unable to determine nutritional quality."
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
-    );
+    )
   } catch (error) {
-    console.error('Error in analyze-ingredients function:', error);
+    console.error('Error in analyze-ingredients function:', error)
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        details: error.stack
-      }),
+      JSON.stringify({ error: error.message }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
-    );
+    )
   }
-});
+})
