@@ -13,11 +13,16 @@ serve(async (req) => {
   }
 
   try {
-    // Log the raw request for debugging
-    const rawBody = await req.text();
-    console.log('Raw request body:', rawBody);
+    // Log request details for debugging
+    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
+    console.log('Request method:', req.method);
 
-    // Parse JSON after logging
+    // Get the raw body and log it
+    const rawBody = await req.text();
+    console.log('Raw request body length:', rawBody.length);
+    console.log('Raw request body preview:', rawBody.substring(0, 100));
+
+    // Parse JSON body
     let body;
     try {
       body = JSON.parse(rawBody);
@@ -25,9 +30,10 @@ serve(async (req) => {
       console.error('Error parsing request body:', error);
       return new Response(
         JSON.stringify({ 
-          error: 'Invalid request body',
+          error: 'Invalid JSON in request body',
           details: error.message,
-          receivedBody: rawBody
+          bodyLength: rawBody.length,
+          bodyPreview: rawBody.substring(0, 100)
         }),
         { 
           status: 400,
@@ -39,9 +45,10 @@ serve(async (req) => {
     // Validate image data
     const { image } = body;
     if (!image) {
+      console.error('No image data in request body:', body);
       return new Response(
         JSON.stringify({ 
-          error: 'No image provided',
+          error: 'No image data provided',
           receivedBody: body 
         }),
         { 
@@ -71,7 +78,7 @@ serve(async (req) => {
 3. Assess overall nutritional balance
 4. Consider preservatives and additives
 5. Rate on a scale of 1-5 (1=poor, 5=excellent)
-Provide ONLY the numerical score (1-5) as your response.`
+Provide ONLY a numerical score (1-5) as your response.`
           },
           {
             role: 'user',

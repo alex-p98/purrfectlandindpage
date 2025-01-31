@@ -144,6 +144,8 @@ export const Scanner = () => {
 
     setIsScanning(true);
     try {
+      console.log('Sending image data, length:', capturedImage.length);
+      
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-ingredients', {
         body: { image: capturedImage },
         headers: {
