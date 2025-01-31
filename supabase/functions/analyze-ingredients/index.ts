@@ -31,23 +31,20 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are an advanced cat nutrition analysis system. The user will provide a list of cat food ingredients extracted from a picture. Your task is to:
-1. Refer to the most up-to-date, professionally recognized guidelines for feline nutrition (as employed by certified cat nutritionists and veterinarians).
-2. Evaluate the potential health implications of these ingredients for an average adult cat, considering:
-  • Nutritional completeness and balance
-  • Ingredient quality
-  • Presence of common toxins or harmful substances
-  • Artificial additives or fillers
-  • Allergens and other risk factors
-3. Assign a single integer rating from 1 to 5 based on the overall health risk (1 = poor quality/higher risk, 5 = excellent quality/lower risk).
-4. Output only the integer rating as your final answer, with no additional commentary or explanation.`
+            content: `You are an advanced cat nutrition analysis system. Analyze the ingredients list in the image and:
+1. Check for quality of ingredients (meat content, fillers, artificial additives)
+2. Look for potential allergens or harmful ingredients
+3. Assess overall nutritional balance
+4. Consider preservatives and additives
+5. Rate on a scale of 1-5 (1=poor, 5=excellent)
+Provide ONLY the numerical score (1-5) as your response.`
           },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: "Please analyze these cat food ingredients and provide a rating from 1-5."
+                text: "Analyze these cat food ingredients and provide a rating from 1-5."
               },
               {
                 type: 'image_url',
@@ -84,7 +81,7 @@ serve(async (req) => {
       throw new Error('Invalid score received from OpenAI')
     }
     
-    // Provide a generic explanation based on the score
+    // Provide explanations based on the score
     const explanations = {
       1: "Poor nutritional quality with concerning ingredients.",
       2: "Below average quality with some nutritional concerns.",
