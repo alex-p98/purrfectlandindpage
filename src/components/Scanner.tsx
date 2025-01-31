@@ -19,18 +19,37 @@ export const Scanner = () => {
   const { session } = useAuth();
 
   // Query to get user's scan usage
-  const { data: usage } = useQuery({
+  const { data: usage, refetch: refetchUsage } = useQuery({
     queryKey: ['user-usage'],
     queryFn: async () => {
       if (!session?.user.id) return null;
-      const { data, error } = await supabase
+      
+      // First try to get existing record
+      const { data: existingData, error: fetchError } = await supabase
         .from('user_usage')
         .select('*')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
-      return data;
+      if (fetchError) throw fetchError;
+      
+      // If no record exists, create one
+      if (!existingData) {
+        const { data: newData, error: insertError } = await supabase
+          .from('user_usage')
+          .insert({
+            user_id: session.user.id,
+            scans_this_month: 0,
+            last_scan_reset: new Date().toISOString()
+          })
+          .select()
+          .single();
+        
+        if (insertError) throw insertError;
+        return newData;
+      }
+      
+      return existingData;
     },
     enabled: !!session?.user.id
   });
@@ -148,6 +167,9 @@ export const Scanner = () => {
         });
 
       if (updateError) throw updateError;
+      
+      // Refetch usage data to update the UI
+      await refetchUsage();
 
       setHealthScore({
         score: analysisData.score,
