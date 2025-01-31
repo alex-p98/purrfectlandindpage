@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,17 +7,42 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const { image } = await req.json()
-    if (!image) {
-      throw new Error('No image provided')
+    // Validate request body
+    let body;
+    try {
+      body = await req.json();
+    } catch (error) {
+      console.error('Error parsing request body:', error);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid request body',
+          details: error.message 
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
-    
+
+    // Validate image data
+    const { image } = body;
+    if (!image) {
+      return new Response(
+        JSON.stringify({ error: 'No image provided' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
     console.log('Received image data, calling OpenAI API...');
 
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -27,7 +52,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4-vision-preview',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
@@ -57,28 +82,28 @@ Provide ONLY the numerical score (1-5) as your response.`
         ],
         max_tokens: 10
       }),
-    })
+    });
 
     if (!openAIResponse.ok) {
-      const errorData = await openAIResponse.text()
-      console.error('OpenAI API Error:', errorData)
-      throw new Error(`OpenAI API error: ${errorData}`)
+      const errorData = await openAIResponse.text();
+      console.error('OpenAI API Error:', errorData);
+      throw new Error(`OpenAI API error: ${errorData}`);
     }
 
-    const openAIData = await openAIResponse.json()
-    console.log('OpenAI API Response:', JSON.stringify(openAIData))
+    const openAIData = await openAIResponse.json();
+    console.log('OpenAI API Response:', JSON.stringify(openAIData));
     
     if (!openAIData.choices?.[0]?.message?.content) {
-      throw new Error('Invalid response format from OpenAI')
+      throw new Error('Invalid response format from OpenAI');
     }
 
     // Extract and validate the score
-    const content = openAIData.choices[0].message.content.trim()
-    const score = parseInt(content)
+    const content = openAIData.choices[0].message.content.trim();
+    const score = parseInt(content);
     
     if (isNaN(score) || score < 1 || score > 5) {
-      console.error('Invalid score received:', content)
-      throw new Error('Invalid score received from OpenAI')
+      console.error('Invalid score received:', content);
+      throw new Error('Invalid score received from OpenAI');
     }
     
     // Provide explanations based on the score
@@ -88,23 +113,23 @@ Provide ONLY the numerical score (1-5) as your response.`
       3: "Average quality with balanced nutrition.",
       4: "Above average quality with good nutritional value.",
       5: "Excellent quality with optimal nutritional content."
-    }
+    };
 
     const response = {
       score,
-      explanation: explanations[score] || "Unable to determine nutritional quality."
-    }
+      explanation: explanations[score as keyof typeof explanations] || "Unable to determine nutritional quality."
+    };
 
-    console.log('Sending response:', JSON.stringify(response))
+    console.log('Sending response:', JSON.stringify(response));
 
     return new Response(
       JSON.stringify(response),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
-    )
+    );
   } catch (error) {
-    console.error('Error in analyze-ingredients function:', error)
+    console.error('Error in analyze-ingredients function:', error);
     return new Response(
       JSON.stringify({ 
         error: error.message,
@@ -114,6 +139,6 @@ Provide ONLY the numerical score (1-5) as your response.`
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
-    )
+    );
   }
-})
+});
