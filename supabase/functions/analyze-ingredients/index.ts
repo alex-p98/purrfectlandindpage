@@ -14,11 +14,13 @@ serve(async (req) => {
 
   try {
     const { image } = await req.json()
+    if (!image) {
+      throw new Error('No image provided')
+    }
     
-    console.log('Calling OpenAI API with image...');
+    console.log('Received image data, calling OpenAI API...');
 
-    // Call OpenAI API
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
@@ -60,18 +62,25 @@ serve(async (req) => {
       }),
     })
 
-    const data = await response.json()
-    console.log('OpenAI API Response:', data);
-    
-    if (!response.ok) {
-      throw new Error(data.error?.message || 'Failed to analyze ingredients')
+    if (!openAIResponse.ok) {
+      const errorData = await openAIResponse.text()
+      console.error('OpenAI API Error:', errorData)
+      throw new Error(`OpenAI API error: ${errorData}`)
     }
 
-    // Extract the score from the response
-    const content = data.choices[0].message.content.trim()
+    const openAIData = await openAIResponse.json()
+    console.log('OpenAI API Response:', JSON.stringify(openAIData))
+    
+    if (!openAIData.choices?.[0]?.message?.content) {
+      throw new Error('Invalid response format from OpenAI')
+    }
+
+    // Extract and validate the score
+    const content = openAIData.choices[0].message.content.trim()
     const score = parseInt(content)
     
     if (isNaN(score) || score < 1 || score > 5) {
+      console.error('Invalid score received:', content)
       throw new Error('Invalid score received from OpenAI')
     }
     
@@ -84,11 +93,15 @@ serve(async (req) => {
       5: "Excellent quality with optimal nutritional content."
     }
 
+    const response = {
+      score,
+      explanation: explanations[score] || "Unable to determine nutritional quality."
+    }
+
+    console.log('Sending response:', JSON.stringify(response))
+
     return new Response(
-      JSON.stringify({
-        score,
-        explanation: explanations[score] || "Unable to determine nutritional quality."
-      }),
+      JSON.stringify(response),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
@@ -96,7 +109,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in analyze-ingredients function:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: error.stack
+      }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
