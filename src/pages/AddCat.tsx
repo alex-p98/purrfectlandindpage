@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -76,13 +76,13 @@ const AddCat = () => {
       });
 
       navigate("/");
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error creating cat profile:", error);
       toast({
         title: "Error",
-        description: "Failed to create cat profile. Please try again.",
+        description: error.message || "Failed to create cat profile. Please try again.",
         variant: "destructive",
       });
-      console.error("Error creating cat profile:", error);
     }
   };
 
