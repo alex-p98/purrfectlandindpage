@@ -8,7 +8,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
 import type { Json } from "@/integrations/supabase/types";
 
 interface DietSection {
@@ -37,7 +36,6 @@ const CustomDiet = () => {
   const [selectedCat, setSelectedCat] = useState<CatInfo | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [dietSections, setDietSections] = useState<DietSection[]>([]);
-  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
 
   const { data: cats, isLoading } = useQuery({
@@ -76,28 +74,6 @@ const CustomDiet = () => {
       toast.error('Failed to save diet plan. Please try again.');
     },
   });
-
-  const handlePayment = async () => {
-    if (!selectedCat) {
-      toast.error("Please select a cat first");
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase.functions.invoke('create-diet-payment', {
-        body: { catId: selectedCat.id }
-      });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        window.location.href = data.url;
-      }
-    } catch (error) {
-      console.error('Error initiating payment:', error);
-      toast.error('Failed to initiate payment. Please try again.');
-    }
-  };
 
   const parseMarkdownResponse = (markdown: string) => {
     const sections: DietSection[] = [];
@@ -159,11 +135,6 @@ const CustomDiet = () => {
       return;
     }
 
-    if (!selectedCat.diet_plan) {
-      handlePayment();
-      return;
-    }
-
     setIsGenerating(true);
     setDietSections([]);
     
@@ -203,18 +174,6 @@ const CustomDiet = () => {
       setIsGenerating(false);
     }
   };
-
-  // Check for successful payment
-  const success = searchParams.get('success');
-  if (success === 'true') {
-    toast.success('Payment successful! Generating your custom diet plan...');
-    handleGenerateDiet();
-    // Clear the success parameter
-    searchParams.delete('success');
-  } else if (success === 'false') {
-    toast.error('Payment cancelled. Please try again when you\'re ready.');
-    searchParams.delete('success');
-  }
 
   if (isLoading) {
     return (
@@ -312,7 +271,7 @@ const CustomDiet = () => {
                   onClick={handleGenerateDiet}
                   disabled={isGenerating}
                 >
-                  {isGenerating ? "Generating..." : selectedCat.diet_plan ? "Generate Custom Diet" : "Generate Custom Diet ($5)"}
+                  {isGenerating ? "Generating..." : "Generate Custom Diet"}
                 </Button>
               </Card>
             )}
