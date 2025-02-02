@@ -59,6 +59,11 @@ const AddCat = () => {
     }
 
     try {
+      console.log("Submitting with values:", {
+        ...values,
+        user_id: user.id
+      });
+      
       const { error } = await supabase.from("cats").insert({
         name: values.name,
         breed: values.breed,
@@ -70,7 +75,10 @@ const AddCat = () => {
         notes: values.notes || null,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error details:", error);
+        throw error;
+      }
 
       toast({
         title: "Success!",
