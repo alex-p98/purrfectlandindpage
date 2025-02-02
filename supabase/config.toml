@@ -1,4 +1,4 @@
 project_id = "uwjfpheikejfxdnsolli"
 
-[functions.analyze-ingredients]
-verify_jwt = false
+[functions.create-diet-payment]
+verify_jwt = true
