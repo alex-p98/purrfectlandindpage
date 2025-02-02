@@ -11,6 +11,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { useSearchParams } from "react-router-dom";
+import { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
+import { Database } from "@/integrations/supabase/types";
+
+type UserUsage = Database['public']['Tables']['user_usage']['Row'];
 
 export const Scanner = () => {
   const [showCamera, setShowCamera] = useState(false);
@@ -37,9 +41,9 @@ export const Scanner = () => {
             table: 'user_usage',
             filter: `user_id=eq.${session.user.id}`
           },
-          (payload) => {
+          (payload: RealtimePostgresChangesPayload<UserUsage>) => {
             if (payload.new) {
-              const newScansThisMonth = payload.new.scans_this_month || 0;
+              const newScansThisMonth = payload.new.scans_this_month ?? 0;
               setScansLeft(2 - newScansThisMonth);
             }
           }
