@@ -3,11 +3,10 @@ import { Button } from "@/components/ui/button";
 
 interface CaptureOptionsProps {
   onCameraClick: () => void;
-  scansLeft: number;
   onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-export const CaptureOptions = ({ onCameraClick, scansLeft, onFileUpload }: CaptureOptionsProps) => {
+export const CaptureOptions = ({ onCameraClick, onFileUpload }: CaptureOptionsProps) => {
   return (
     <>
       <p className="text-sm text-muted-foreground text-center max-w-[280px]">
@@ -19,7 +18,6 @@ export const CaptureOptions = ({ onCameraClick, scansLeft, onFileUpload }: Captu
           className="scale-animation w-full" 
           size="lg"
           onClick={onCameraClick}
-          disabled={scansLeft === 0}
         >
           <Camera className="mr-2 h-5 w-5" />
           Take Photo
@@ -29,7 +27,6 @@ export const CaptureOptions = ({ onCameraClick, scansLeft, onFileUpload }: Captu
           className="scale-animation w-full" 
           size="lg"
           onClick={() => document.getElementById('file-upload')?.click()}
-          disabled={scansLeft === 0}
         >
           <Upload className="mr-2 h-5 w-5" />
           Upload

@@ -1,7 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { CameraCapture } from "./scanner/CameraCapture";
 import { ImagePreview } from "./scanner/ImagePreview";
-import { PaymentOptions } from "./scanner/PaymentOptions";
 import { ScannerHeader } from "./scanner/ScannerHeader";
 import { CaptureOptions } from "./scanner/CaptureOptions";
 import { AnalysisResult } from "./scanner/AnalysisResult";
@@ -16,7 +15,6 @@ export const Scanner = () => {
     isScanning,
     healthScore,
     setHealthScore,
-    scansLeft,
     handleFileUpload,
     handleScanIngredients,
   } = useScannerState();
@@ -26,39 +24,32 @@ export const Scanner = () => {
       <Card className="p-8 flex flex-col items-center gap-6 relative overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-2 wave-pattern" />
         
-        <ScannerHeader scansLeft={scansLeft} />
+        <ScannerHeader />
 
-        {scansLeft === 0 && !capturedImage ? (
-          <PaymentOptions />
+        {!capturedImage ? (
+          <CaptureOptions
+            onCameraClick={() => setShowCamera(true)}
+            onFileUpload={handleFileUpload}
+          />
         ) : (
-          <>
-            {!capturedImage ? (
-              <CaptureOptions
-                onCameraClick={() => setShowCamera(true)}
-                scansLeft={scansLeft}
-                onFileUpload={handleFileUpload}
+          <div className="space-y-6 w-full max-w-xs">
+            <ImagePreview 
+              imageUrl={capturedImage}
+              onReset={() => {
+                setCapturedImage(null);
+                setHealthScore(null);
+              }}
+              onScan={handleScanIngredients}
+              isScanning={isScanning}
+            />
+            
+            {healthScore && (
+              <AnalysisResult 
+                score={healthScore.score}
+                explanation={healthScore.explanation}
               />
-            ) : (
-              <div className="space-y-6 w-full max-w-xs">
-                <ImagePreview 
-                  imageUrl={capturedImage}
-                  onReset={() => {
-                    setCapturedImage(null);
-                    setHealthScore(null);
-                  }}
-                  onScan={handleScanIngredients}
-                  isScanning={isScanning}
-                />
-                
-                {healthScore && (
-                  <AnalysisResult 
-                    score={healthScore.score}
-                    explanation={healthScore.explanation}
-                  />
-                )}
-              </div>
             )}
-          </>
+          </div>
         )}
       </Card>
 
