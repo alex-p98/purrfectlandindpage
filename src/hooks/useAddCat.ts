@@ -19,16 +19,15 @@ export const useAddCat = () => {
     }
 
     try {
-      const { error } = await supabase
+      // First check if user already has a cat
+      const { data: existingCats, error: fetchError } = await supabase
         .from('cats')
-        .insert({
-          name: 'temp',
-          breed: 'temp',
-          age: 'temp',
-          user_id: user.id
-        });
+        .select('id')
+        .eq('user_id', user.id);
 
-      if (error?.message.includes('policy')) {
+      if (fetchError) throw fetchError;
+
+      if (existingCats && existingCats.length > 0) {
         toast({
           title: "Limit Reached",
           description: "Free users can only create one cat profile. Please delete your existing profile to create a new one.",
@@ -37,8 +36,7 @@ export const useAddCat = () => {
         return;
       }
 
-      // If we get here, the insert was successful (though it will be rolled back)
-      // so we can navigate to the add cat page
+      // If we get here, the user can create a new cat
       navigate("/add-cat");
     } catch (error) {
       toast({
