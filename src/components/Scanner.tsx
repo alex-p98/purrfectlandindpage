@@ -42,7 +42,8 @@ export const Scanner = () => {
             filter: `user_id=eq.${session.user.id}`
           },
           (payload: RealtimePostgresChangesPayload<UserUsage>) => {
-            if (payload.new) {
+            // Ensure payload.new exists and has the expected shape
+            if (payload.new && 'scans_this_month' in payload.new) {
               const newScansThisMonth = payload.new.scans_this_month ?? 0;
               setScansLeft(2 - newScansThisMonth);
             }
