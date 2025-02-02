@@ -60,7 +60,9 @@ const AddCat = () => {
 
     try {
       const { error } = await supabase.from("cats").insert({
-        ...values,
+        name: values.name,
+        breed: values.breed,
+        age: values.age,
         user_id: user.id,
         weight: values.weight || null,
         allergies: values.allergies || null,
