@@ -32,7 +32,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 const AddCat = () => {
   const navigate = useNavigate();
-  const { session } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const form = useForm<FormValues>({
@@ -49,7 +49,7 @@ const AddCat = () => {
   });
 
   const onSubmit = async (values: FormValues) => {
-    if (!session?.user.id) {
+    if (!user?.id) {
       toast({
         title: "Error",
         description: "You must be logged in to create a cat profile.",
@@ -60,14 +60,12 @@ const AddCat = () => {
 
     try {
       const { error } = await supabase.from("cats").insert({
-        name: values.name,
-        breed: values.breed,
-        age: values.age,
+        ...values,
+        user_id: user.id,
         weight: values.weight || null,
         allergies: values.allergies || null,
         health_condition: values.health_condition || null,
         notes: values.notes || null,
-        user_id: session.user.id,
       });
 
       if (error) throw error;
