@@ -25,6 +25,30 @@ export const Scanner = () => {
   useEffect(() => {
     if (session?.user) {
       fetchUserScans();
+      
+      // Subscribe to real-time updates
+      const channel = supabase
+        .channel('user-usage-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'user_usage',
+            filter: `user_id=eq.${session.user.id}`
+          },
+          (payload) => {
+            if (payload.new) {
+              const newScansThisMonth = payload.new.scans_this_month || 0;
+              setScansLeft(2 - newScansThisMonth);
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [session]);
 
