@@ -15,7 +15,7 @@ export const Scanner = () => {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [healthScore, setHealthScore] = useState<{ score: number; explanation: string } | null>(null);
-  const [scansLeft, setScansLeft] = useState<number | null>(null);
+  const [scansLeft, setScansLeft] = useState<number>(0);
   const { session } = useAuth();
   const { toast } = useToast();
 
@@ -170,7 +170,7 @@ export const Scanner = () => {
               Free scans remaining this month:
             </p>
             <Badge variant={scansLeft === 0 ? "destructive" : "default"}>
-              {scansLeft ?? "..."}/2
+              {scansLeft}/2
             </Badge>
           </div>
         </div>
